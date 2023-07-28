@@ -1,7 +1,7 @@
 function _prepare_init_file_configuration(io)
     # Add a comment at top (IniFile.jl has no functions for comments)
     msg = """
-        # Configuration file for 'RouteDistanceInclination'.
+        # Configuration file for 'RouteSlopeDistance'.
         # You can modify and save the values here. To start over from 'factory settings':
         # Delete this file. A new file will be created next time configurations are used.
         #
@@ -16,7 +16,7 @@ function _prepare_init_file_configuration(io)
     #
     conta = Inifile()
     # Lines in arbitrary order from file
-    set(conta, "http fields", "User agent", "RouteDistanceInclination.jl 0.0.1 temp_script")
+    set(conta, "http fields", "User agent", "RouteSlopeDistance.jl 0.0.1 temp_script")
     set(conta, "api server", "baseurl", "https://nvdbapiles-v3.utv.atlas.vegvesen.no/")
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json")
     #
@@ -86,7 +86,7 @@ function _get_ini_fnam()
     end
     fna
 end
-_get_fnam_but_dont_create_file() =  joinpath(homedir(), "RouteDistanceInclination.ini")
+_get_fnam_but_dont_create_file() =  joinpath(homedir(), "RouteSlopeDistance.ini")
 
 
 

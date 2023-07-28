@@ -1,4 +1,4 @@
-module RouteDistanceInclination()
+module RouteSlopeDistance()
     using HTTP, IniFile, JSON3, UUIDs, Dates
     export nvdb_request, route_data
     include("ini_file.jl")

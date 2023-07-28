@@ -26,7 +26,7 @@ Base.@kwdef mutable struct Logstate
     request_string::Bool = true
     empty_response::Bool = true
 end
-Logstate(;authorization = true, request_string = true, empty_response = true) = Logstate(authorization, request_string, empty_response)
+#Logstate(;authorization = true, request_string = true, empty_response = true) = Logstate(authorization, request_string, empty_response)
 
 """
 LOGSTATE mutable state
