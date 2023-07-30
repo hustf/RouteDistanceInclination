@@ -10,8 +10,10 @@ Dict{Int, String}(
     403	=> "Forbidden - The server understood the request, but is refusing to fulfill it.",
     404	=> "Not Found - The requested resource could not be found. This error can be due to a temporary or permanent condition.",
     405	=> "Method Not Allowed",
+    422 => "Unprocessable Entity",
     429	=> "Too Many Requests - Rate limiting has been applied.",
-    500	=> "Internal Server Error. You should never receive this error because our clever coders catch them all … but if you are unlucky enough to get one, please report it to us through a comment at the bottom of this page.",
+    500	=> "Internal Server Error",
     502	=> "Bad Gateway - The server was acting as a gateway or proxy and received an invalid response from the upstream server.",
-    503	=> "Service Unavailable - The server is currently unable to handle the request due to a temporary condition which will be alleviated after some delay. You can choose to resend the request again.")
-    4013 => "Ukjent parameter: vegvdeling"
+    503	=> "Service Unavailable - The server is currently unable to handle the request due to a temporary condition which will be alleviated after some delay. You can choose to resend the request again.",
+    4000 => "Ugyldig verdi `string` for trafikantgruppe. Gyldige verdier: [K, G]",
+    4013 => "Ukjent parameter: vegvdeling")

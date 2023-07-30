@@ -18,7 +18,9 @@ function _prepare_init_file_configuration(io)
     # Lines in arbitrary order from file
     set(conta, "http fields", "User agent", "RouteSlopeDistance.jl 0.0.1 temp_script")
     set(conta, "api server", "baseurl", "https://nvdbapiles-v3.utv.atlas.vegvesen.no/")
-    set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json")
+    #set(conta, "api server", "baseurl",  "https://nvdbapiles-v3.atlas.vegvesen.no/") # temp
+    #set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev1+json")
+    set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
     #
     println(io, conta)
 end

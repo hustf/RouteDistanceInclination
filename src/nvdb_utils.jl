@@ -6,13 +6,17 @@
 For nvdb requests, provide required fields.
 A new UUID is generated every session.
 """
-function get_nvdb_fields()
+function get_nvdb_fields(body)
     ua = get_config_value("http fields", "User agent")
     ac = get_config_value("http fields", "Accept")
-    ["X-Client-Session" => "$NvdbSessionID", 
-    "X-Client-User-Agent" => "$ua",
+    idfields = ["X-Client-Session" => "$NvdbSessionID", 
+    "X-Client" => "$ua",
     "User-Agent" => "$ua",
     "Accept" => "$ac"]
+    if body !== ""
+        push!(idfields, "Content-Type" => "application/json")
+    end
+    idfields
 end
 
 
@@ -26,7 +30,6 @@ Base.@kwdef mutable struct Logstate
     request_string::Bool = true
     empty_response::Bool = true
 end
-#Logstate(;authorization = true, request_string = true, empty_response = true) = Logstate(authorization, request_string, empty_response)
 
 """
 LOGSTATE mutable state
