@@ -16,17 +16,19 @@ function patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
     end
     vegsystemreferanse_prefixed = String[]
     Δl = Float64[]
+    multi_linestrings = Vector{Vector{Tuple{Float64, Float64, Float64}}}()
     # Collect patches and add them to the quilt
     for i in 1:(length(sequence) - 1)
         tup1 = sequence[i]
         tup2 = sequence[i + 1]
-        refs, lengths = post_beta_vegnett_rute(tup1..., tup2...)
+        refs, lengths, multi_linestring = post_beta_vegnett_rute(tup1..., tup2...)
         # Add this patch to output
         append!(vegsystemreferanse_prefixed, refs)
         append!(Δl, lengths)
+        append!(multi_linestring, multi_linestrings)
     end
     # Output the quilt
-    vegsystemreferanse_prefixed, Δl
+    vegsystemreferanse_prefixed, Δl, multi_linestrings
 end
 
 

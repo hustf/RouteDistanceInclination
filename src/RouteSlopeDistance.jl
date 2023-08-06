@@ -7,4 +7,5 @@ module RouteSlopeDistance()
     include("endpoints.jl")
     include("exported.jl")
     include("patch_links_and_coordinates.jl")
+    include("utils.jl")
 end

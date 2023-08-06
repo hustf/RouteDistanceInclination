@@ -49,7 +49,7 @@ end
     post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
 https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/openapi/#/Vegnett/post_beta_vegnett_rute
 
-This function only returns vectors 'vegsystemreferanse_prefixed, Δl', while the endpoint returns more.
+This function only returns vectors 'vegsystemreferanse_prefixed, Δl, multi_linestring', while the endpoint returns more.
 """
 function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
     # "Gyldige verdier for 'typeveg' er [kanalisertveg, enkelbilveg, rampe, rundkjøring, 
@@ -96,10 +96,12 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
             throw("unknown error code")
         end
     end
+    @assert hasproperty(o, :vegnettsrutesegmenter)
     Δl = map(o.vegnettsrutesegmenter) do s
         s.lengde
     end
     @assert sum(Δl) ≈ o.metadata.lengde
+
     vegsystemreferanse_prefixed = map(o.vegnettsrutesegmenter) do s
         r = s.vegsystemreferanse
         @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
@@ -107,7 +109,45 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
         k = s.kommune
         "$k $sy"
     end
-    vegsystemreferanse_prefixed, Δl
+    multi_linestring = map(o.vegnettsrutesegmenter) do s
+        ls = map(split(s.geometri.wkt[14:end-1], ',')) do v
+            NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
+        end
+    end
+    # Flip the order of points if necessary for continuity. 
+    reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
+    # A little bit of checking that the geometry is right
+    # Check C0 continuity
+    previousend = (0.0, 0.0, 0.0)
+    for (i, ls) in enumerate(multi_linestring)
+        global previousend
+        thisstart = ls[1]
+        thisend = ls[end]
+        if i > 1 
+            if distance_between(thisstart, previousend) > 0.1 
+                msg = "Not matching start point $thisstart and previous end $previousend \n"
+                msg *= "The distance between is  $(distance_between(thisstart, previousend))\n"
+                msg *= "This start point is on $(vegsystemreferanse_prefixed[i])\n"
+                msg *= "Previous end is on $(vegsystemreferanse_prefixed[i - 1])\n"
+                println()
+                throw(AssertionError(msg))
+            end
+        end
+        previousend = thisend
+    end
+    # Check length with straight lines between points.
+    Δl_linestrings = map(length_of_linestring, multi_linestring)
+    @assert length(Δl_linestrings) == length(Δl)
+    if abs(round(sum(Δl_linestrings)) - round(o.metadata.lengde)) > 4
+        msg = "Trouble when checking length totals. o.metadata.lengde = $(o.metadata.lengde)\n" 
+        msg *= "\t\t\tsum(Δl_linestrings) - o.metadata.lengde =  $(sum(Δl_linestrings) - o.metadata.lengde)\n"
+        for (i, ref) in enumerate(vegsystemreferanse_prefixed)
+            msg *= "\t$ref     Δl_linestrings[$i] = $(Δl_linestrings[i])\n"
+        end
+        println()
+        @warn msg
+    end
+    vegsystemreferanse_prefixed, Δl, multi_linestring
 end
 
 

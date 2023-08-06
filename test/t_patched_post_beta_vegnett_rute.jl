@@ -14,7 +14,9 @@ get_config_value("coordinates replacement", key, Tuple{Float64, Float64}; nothin
 
 # Test a non-defined single point replacement
 @test corrected_coordinates(false, ea1 + 1, no1) == (ea1 + 1, no1)
-sequential_patched_positions(ea1, no1, ea2, no2)
+stop = 2
+na2, ea2, no2 = M[stop, :]
+@test sequential_patched_positions(ea1, no1, ea2, no2) isa Vector{Tuple{Float64, Float64}}
 
 
 # Test a non-patched or point corrected segment
@@ -50,7 +52,7 @@ key = coordinate_key(true, ea2, no2)
 replaced_pos = get_config_value("coordinates replacement", key, Tuple{Float64, Float64}; nothing_if_not_found = true)
 @test ! isnothing(replaced_pos)
 @test corrected_coordinates(true, ea2, no2) !== (ea2, no2)
-vegsystemreferanse_prefixed, Δl = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
+vegsystemreferanse_prefixed, Δl, multi_linestring = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
 @test length(Δl) == 16
 @test sum(Δl) > 500 && sum(Δl) < 600
 
