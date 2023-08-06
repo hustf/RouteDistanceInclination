@@ -46,3 +46,30 @@ function reverse_linestrings_where_needed!(multi_linestring, easting1, northing1
     end
     multi_linestring
 end
+
+"""
+    check_continuity_of_multi_linestrings(multi_linestring)
+
+The last point in a linestring should match with the first point of the next.
+We do allow some leeway here, 10 cm.
+"""
+function check_continuity_of_multi_linestrings(multi_linestring)
+    # A little bit of checking that the geometry is right
+    # Check C0 continuity
+    previousend = (0.0, 0.0, 0.0)
+    for (i, ls) in enumerate(multi_linestring)
+        thisstart = ls[1]
+        thisend = ls[end]
+        if i > 1 
+            if distance_between(thisstart, previousend) > 0.1 
+                msg = "Not matching start point $thisstart and previous end $previousend \n"
+                msg *= "The distance between is  $(distance_between(thisstart, previousend))\n"
+                msg *= "This start point is on $(vegsystemreferanse_prefixed[i])\n"
+                msg *= "Previous end is on $(vegsystemreferanse_prefixed[i - 1])\n"
+                println()
+                throw(AssertionError(msg))
+            end
+        end
+        previousend = thisend
+    end
+end

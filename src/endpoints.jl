@@ -116,25 +116,7 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
     end
     # Flip the order of points if necessary for continuity. 
     reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    # A little bit of checking that the geometry is right
-    # Check C0 continuity
-    previousend = (0.0, 0.0, 0.0)
-    for (i, ls) in enumerate(multi_linestring)
-        global previousend
-        thisstart = ls[1]
-        thisend = ls[end]
-        if i > 1 
-            if distance_between(thisstart, previousend) > 0.1 
-                msg = "Not matching start point $thisstart and previous end $previousend \n"
-                msg *= "The distance between is  $(distance_between(thisstart, previousend))\n"
-                msg *= "This start point is on $(vegsystemreferanse_prefixed[i])\n"
-                msg *= "Previous end is on $(vegsystemreferanse_prefixed[i - 1])\n"
-                println()
-                throw(AssertionError(msg))
-            end
-        end
-        previousend = thisend
-    end
+    check_continuity_of_multi_linestrings(multi_linestring)
     # Check length with straight lines between points.
     Δl_linestrings = map(length_of_linestring, multi_linestring)
     @assert length(Δl_linestrings) == length(Δl)
