@@ -59,27 +59,39 @@ function nvdb_request(url_ext::String, method::String = "GET"; body = "",
             else
                 msg = "$(e.status): $code_meaning"
             end
-            @info msg
             if e.status == 400 
+                @info msg
                 return JSON3.Object(), 0
             elseif e.status == 403
+                @info msg
                 printstyled("  This message may have been triggered by insufficient identification.\n", color = :red)
                 logstate.authorization && printstyled("               id fields: ", idfields, "\n", color = :red)
                 return JSON3.Object(), 0
             elseif e.status == 404 # Not found.
-                return JSON3.Object(), 0
-            elseif e.status == 405 
+                response_object = JSON3.read(response_body)
+                if response_object[1].code == 4012
+                    return response_object[1], 0
+                else
+                    @info msg
+                    return JSON3.Object(), 0
+                end
+            elseif e.status == 405
+                @info msg 
                 return JSON3.Object(), 0
             elseif e.status == 422 
+                @info msg
                 printstyled(" (status code:) $(e.status) (meaning:) $code_meaning ",  "\n", color = :red)
                 return JSON3.Object(), 0
             elseif e.status == 429 # API rate limit temporarily exceeded.
+                @info msg
                 retry_in_seconds =  HTTP.header(e.response, "retry-after") 
                 return JSON3.Object(), parse(Int, retry_in_seconds)
-            elseif e.status == 500 
+            elseif e.status == 500
+                @info msg 
                 printstyled(" (status code:) $(e.status) (meaning:) $code_meaning ",  "\n", color = :red)
                 return JSON3.Object(), 0
             else # 401 probably
+                @info msg
                 @warn "Error code $(e.status)."
                 return JSON3.Object(), 0
             end

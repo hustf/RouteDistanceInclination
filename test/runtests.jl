@@ -1,7 +1,7 @@
 using Test
 using RouteSlopeDistance
 
-include("unit.jl")
-include("retrieve_vegsystem_id.jl")
-include("retrieve_vegobjekt.jl")
-include("route_data.jl")
+include("t_unit.jl")
+include("t_retrieve_vegsystem_id.jl")
+include("t_retrieve_vegobjekt.jl")
+include("t_route_data.jl")

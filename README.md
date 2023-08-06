@@ -10,6 +10,6 @@ traffic data, which can also be pulled using this package.
 
 The API base url, version, etc. is configureable in the .ini file, and could possibly be compatible with other national systems.
 
-If an endpoint is not wrapped in `endpoints.jl`, use `nvdb_request` directly. See inline docs and the API docs:
+If an endpoint is not wrapped in ` exported.jl`, use `nvdb_request` directly. See inline docs and the API docs:
 
 https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/

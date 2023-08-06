@@ -26,9 +26,9 @@ const BASEURL = get_config_value("api server", "baseurl")
 
 "Logstate(;authorization = true, request_string = true, empty_response = true)"
 Base.@kwdef mutable struct Logstate
-    authorization::Bool = true
-    request_string::Bool = true
-    empty_response::Bool = true
+    authorization::Bool = false
+    request_string::Bool = false
+    empty_response::Bool = false
 end
 
 """
