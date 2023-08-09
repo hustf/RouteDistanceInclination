@@ -7,7 +7,11 @@ Arguments are start and end points given in UTM33 coordinates.
 """
 function route_data(easting1::T, northing1::T, easting2::T, northing2::T) where T <: Float64
     # Identify the bits of road we're taking from 1 to 2. 
-    refs, Δls, multi_linestrings = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
+    o = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
+    refs = extract_prefixed_vegsystemreferanse(o, easting1, northing1, easting2, northing2)
+    @assert ! startswith(refs[1], "Error") refs[1]
+    lengths = extract_length(o)
+    mls = extract_multi_linestrings(easting, northing, o)
     # Ask nicely for fartsgrense, fartsdemper.
     # Then we might calculate curvature and output spline functions.
     # But points are useful, too, for feedback, so maybe put that elsewhere.-+

@@ -14,11 +14,6 @@ the output would typically occur in the middle of recursive calls.
 """
 function nvdb_request(url_ext::String, method::String = "GET"; body = "",
     logstate = LOGSTATE)
-#    if method == "PUT" || method == "DELETE" || method == "POST"
-        # Some requests include a body, some don't!
-#    else
-#        @assert body == "" "No strict need from this side to define body for other than a 'POST' request!"
-#    end
     if ! (body isa String)
         sbody = JSON3.write(body)
     else
@@ -98,8 +93,11 @@ function nvdb_request(url_ext::String, method::String = "GET"; body = "",
         else
             msg = "HTTP.request call (unexpected error): method = $method\n header with identification fields = $idfields \n $url_ext"
             @warn msg
-            if e isa HTTP.Exceptions.ConnectError || e isa HTTP.RequestError
+            if e isa HTTP.Exceptions.ConnectError
                 @error string(e.url)
+                @error string(e.error)
+                return JSON3.Object(), 0
+            elseif isa HTTP.RequestError
                 @error string(e.error)
                 return JSON3.Object(), 0
             else

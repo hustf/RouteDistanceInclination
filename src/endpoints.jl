@@ -49,7 +49,9 @@ end
     post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
 https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/openapi/#/Vegnett/post_beta_vegnett_rute
 
-This function only returns vectors 'vegsystemreferanse_prefixed, Δl, multi_linestring', while the endpoint returns more.
+This function only returns vectors 'vegsystemreferanse_prefixed' and 'multi_linestring', while the server 
+endpoint returns more.
+When a call fails, the vectors contain helpful messages.
 """
 function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
     # "Gyldige verdier for 'typeveg' er [kanalisertveg, enkelbilveg, rampe, rundkjøring, 
@@ -68,68 +70,7 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
         :tidspunkt              => "2023-07-28"
         ])
     # Make the call, get a json object
-    o = nvdb_request("beta/vegnett/rute", "POST"; body)[1]
-    # Extract just what we want. There is much more.
-    if iszero(o.metadata.antall)
-        if o.metadata.status == 4040 
-            msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
-            msg *= "\t$(coordinate_key(false, easting1, northing1)):\n\t\t"
-            msg *=  get_posisjon(easting1, northing1)
-            msg *= "\n\t"
-            msg *= "$(coordinate_key(true, easting2, northing2)):\n\t\t"
-            msg *= get_posisjon(easting2, northing2)
-            msg *= "\n\t"
-            msg *= "$(link_split_key(easting1, northing1, easting2, northing2))\n\t\t"
-            return [msg], [0.0]
-        elseif o.metadata.status == 4041
-            msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
-            msg *= "$(coordinate_key(false, easting1, northing1)):\n\t"
-            msg *=  get_posisjon(easting1, northing1)
-            return [msg], [0.0]
-        elseif o.metadata.status == 4042
-            msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
-            msg *= "\n\t"
-            msg *= "$(coordinate_key(true, easting2, northing2)):\n\t"
-            msg *= get_posisjon(easting2, northing2)
-            return [msg], [0.0]
-        else
-            throw("unknown error code")
-        end
-    end
-    @assert hasproperty(o, :vegnettsrutesegmenter)
-    Δl = map(o.vegnettsrutesegmenter) do s
-        s.lengde
-    end
-    @assert sum(Δl) ≈ o.metadata.lengde
-
-    vegsystemreferanse_prefixed = map(o.vegnettsrutesegmenter) do s
-        r = s.vegsystemreferanse
-        @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
-        sy = r.kortform
-        k = s.kommune
-        "$k $sy"
-    end
-    multi_linestring = map(o.vegnettsrutesegmenter) do s
-        ls = map(split(s.geometri.wkt[14:end-1], ',')) do v
-            NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
-        end
-    end
-    # Flip the order of points if necessary for continuity. 
-    reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    check_continuity_of_multi_linestrings(multi_linestring)
-    # Check length with straight lines between points.
-    Δl_linestrings = map(length_of_linestring, multi_linestring)
-    @assert length(Δl_linestrings) == length(Δl)
-    if abs(round(sum(Δl_linestrings)) - round(o.metadata.lengde)) > 4
-        msg = "Trouble when checking length totals. o.metadata.lengde = $(o.metadata.lengde)\n" 
-        msg *= "\t\t\tsum(Δl_linestrings) - o.metadata.lengde =  $(sum(Δl_linestrings) - o.metadata.lengde)\n"
-        for (i, ref) in enumerate(vegsystemreferanse_prefixed)
-            msg *= "\t$ref     Δl_linestrings[$i] = $(Δl_linestrings[i])\n"
-        end
-        println()
-        @warn msg
-    end
-    vegsystemreferanse_prefixed, Δl, multi_linestring
+   nvdb_request("beta/vegnett/rute", "POST"; body)[1]
 end
 
 

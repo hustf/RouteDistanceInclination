@@ -20,18 +20,13 @@ function _prepare_init_file_configuration(io)
     set(conta, "api server", "baseurl",  "https://nvdbapiles-v3.test.atlas.vegvesen.no/")
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
     #
-    set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
-    set(conta, "coordinates replacement", "In to 36976 6947659", "36990 6947639")
 
-    # For holdeplasser langs vegen kan ekstra punkt være bedre for å finne riktig rute.
-    # Varleitekrysset
-    #set(conta, "coordinates replacement", "In to 28275 6945289", "29404 6945331") 
-    #set(conta, "coordinates replacement", "Out of 29426 6945335", "29404 6945331")
-    # Støylesvingen
-    #set(conta, "coordinates replacement", "In to 28275 6945289", "28227 6945327")
     ######
-    # Link splits
+    # Link splits 
     ######
+    # The key is from-to coordinates. The value is inserted coordinate.
+    # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding 
+    # new keys.
     # Notøy -> Røyra øst
     set(conta, "link split", "(19429 6943497)-(19922 6944583)", "20160 6944585")
     # Ulstein vgs. -> Støylesvingen
@@ -56,6 +51,9 @@ function _prepare_init_file_configuration(io)
     # Fosnavåg terminal
     set(conta, "coordinates replacement", "In to 16064 6947515", "16047.98 6947536.24")
     set(conta, "coordinates replacement", "Out of 16064 6947515", "16074.87 6947499.33")
+    #set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
+    #set(conta, "coordinates replacement", "In to 36976 6947659", "36990 6947639")
+
 
     # To file..
     println(io, conta)
