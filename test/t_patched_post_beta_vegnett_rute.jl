@@ -47,8 +47,6 @@ insertpos = get_config_value("link split", key, Tuple{Float64, Float64}, nothing
 @test sequential_patched_positions(ea1, no1, ea2, no2) == [[ea1, no1, insertpos...],
                                                           [insertpos..., ea2, no2]]
 q = patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
-
-
 refs = extract_prefixed_vegsystemreferanse(q)
 @test refs[1] == "1515 FV654 S3D1 m1065 SD1 m5-7"
 Δls = extract_length(q)

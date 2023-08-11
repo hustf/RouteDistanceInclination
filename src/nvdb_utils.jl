@@ -1,3 +1,4 @@
+# Definitions directly tied to accessing the nvdb api, not processing it.
 # Ref. https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/
 
 """

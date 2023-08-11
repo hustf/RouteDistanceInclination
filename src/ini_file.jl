@@ -21,12 +21,13 @@ function _prepare_init_file_configuration(io)
     set(conta, "http fields", "Accept", "application/vnd.vegvesen.nvdb-v3-rev2+json") # temp
     #
 
-    ######
+    #############
     # Link splits 
-    ######
+    #############
     # The key is from-to coordinates. The value is inserted coordinate.
     # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding 
-    # new keys.
+    # new keys. Function `link_split_key(ea1, no1, ea2, no2)` can be useful.
+    #
     # Notøy -> Røyra øst
     set(conta, "link split", "(19429 6943497)-(19922 6944583)", "20160 6944585")
     # Ulstein vgs. -> Støylesvingen
@@ -34,6 +35,8 @@ function _prepare_init_file_configuration(io)
     # Botnen -> Garneskrysset. Merk at Garneskrysset etterpå blir erstattet av ny koordinat.
     # Utskrift fra test kan derfor ikke brukes direkte.
     set(conta, "link split", "(26807 6941534)-(26449 6940130)", "26141 6941016")
+    # Myrvåglomma -> Myrvåg
+    set(conta, "link split", "(23911 6938921)-(23412 6939348)", "23732 6938944")
     # Røyra vest -> Frøystadvåg
     set(conta, "link split", "(19605 6944608)-(19495 6945400)", "19332 6945107")
     # Frøystadvåg -> Frøystadkrysset
@@ -51,8 +54,9 @@ function _prepare_init_file_configuration(io)
     # Fosnavåg terminal
     set(conta, "coordinates replacement", "In to 16064 6947515", "16047.98 6947536.24")
     set(conta, "coordinates replacement", "Out of 16064 6947515", "16074.87 6947499.33")
-    #set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
-    #set(conta, "coordinates replacement", "In to 36976 6947659", "36990 6947639")
+    # Hareid bussterminal
+    set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
+    set(conta, "coordinates replacement", "In to 36976 6947659", "36990 6947639")
 
 
     # To file..
