@@ -1,3 +1,5 @@
+# Small functions used elsewhere
+
 """
     length_of_linestring(ls::Vector{Tuple{Float64, Float64, Float64}})
     --> Float64
@@ -139,3 +141,92 @@ function build_query_string(xs::Vararg{String,N} where N)
         first(xs) * "?" * join(others, "&")
     end
 end
+
+"""
+    extract_from_to_meter(vegsystemreferanse::String)
+
+Assumes ending like: 1515 FV61 S5D1 m1401-1412
+"""
+function extract_from_to_meter(vegsystemreferanse::String)
+    from_to = split(vegsystemreferanse, ' ')[end]
+    @assert startswith(from_to, 'm') vegsystemreferanse
+    Tuple(tryparse.(Int, split(from_to[2:end], '-')))
+end
+
+"""
+    extract_strekning_delstrekning(vegsystemreferanse::String)
+
+Assumes ending like: 1515 FV61 S5D1 m1401-1412
+"""
+function extract_strekning_delstrekning(vegsystemreferanse::String)
+    excluding_position = split(vegsystemreferanse, ' ')[1:(end - 1)]
+    String(excluding_position[end])
+end
+
+
+"""
+    correct_to_increasing_distance(vegsystemreferanse::String)
+
+Some requests to post_beta_vegnett_rute return invalid 
+vegsystemreferanse. The highest meter value comes first.
+
+This corrects the error by swapping the last two numbers.
+"""
+function correct_to_increasing_distance(vegsystemreferanse::String)
+    ref_from, ref_to = extract_from_to_meter(vegsystemreferanse)
+    if ref_from <= ref_to 
+        return vegsystemreferanse
+    else
+        v = split(vegsystemreferanse, ' ')
+        to = Int(round(ref_from))
+        from = Int(round(ref_to))
+        return join(v[1:(end - 1)], ' ') * " m$from-$to"
+    end
+end
+
+"""
+    is_segment_relevant(ref, vegsegment)
+
+Some requests to vegdatabase return segments fully outside
+the specified vegsystemreferanse limits. 
+
+This is a way to filter out such results.
+
+"""
+function is_segment_relevant(ref, vegsegment)
+    ref_from, ref_to = extract_from_to_meter(ref)
+    ref_strekning_delstrekning = extract_strekning_delstrekning(ref)
+    if hasproperty(vegsegment, :vegsystemreferanse)
+        vegsystemreferanse = vegsegment.vegsystemreferanse
+        if hasproperty(vegsystemreferanse, :kortform)
+            kortform = vegsystemreferanse.kortform
+            strekning_delstrekning = extract_strekning_delstrekning(kortform)
+            if ref_strekning_delstrekning !== strekning_delstrekning
+                return false
+            end
+        else
+            throw("Why not? $ref")
+        end
+        if hasproperty(vegsystemreferanse, :strekning)
+            strekning = vegsystemreferanse.strekning
+            if hasproperty(strekning, :fra_meter)
+                fra_meter = strekning.fra_meter
+                if fra_meter <= ref_to
+                    if hasproperty(strekning, :til_meter)
+                        til_meter = strekning.til_meter
+                        if til_meter >= ref_from
+                            if til_meter - ref_from >= 1
+                                if ref_to - fra_meter >= 1
+                                    return true
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    false
+end 
+
+

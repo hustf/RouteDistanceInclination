@@ -39,9 +39,10 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
     map(o.vegnettsrutesegmenter) do s
         r = s.vegsystemreferanse
         @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
-        sy = r.kortform
+        sref = r.kortform
+        scorr= correct_to_increasing_distance(sref)
         k = s.kommune
-        "$k $sy"
+        "$k $scorr"
     end
 end
 function extract_prefixed_vegsystemreferanse(q::Quilt)
@@ -118,70 +119,113 @@ function extract_multi_linestrings(q::Quilt)
     for (o, fromto) in zip(q.patches, q.fromtos)
         ea1, no1, _, __ = fromto
         patchml = extract_multi_linestrings(o, ea1, no1)
-        @show typeof(patchml)
         append!(mls, patchml)
     end
     mls
 end
 
-#=
-function extract_fartsgrense(o)
-    for (r, Δl) in zip(refs, Δls)
-        url = "vegobjekter/$vegobjekttype_id?&vegsystemreferanse=$r"
-        o = nvdb_request(url)[1]
-        subref_ids = map(o.objekter) do s
-            s.id
+"""
+    extract_split_fartsgrense(o, ref_from, ref_to)
+    --> () fractional_distance_of_ref, fartsgrense_start, fartsgrense_end
+
+Returns (NaN, 0, 0) when no interpretation is found.
+    
+o is the object returned from request made in 
+
+    fartsgrense_from_prefixed_vegsystemreferanse
+     > get_vegobjekter__vegobjekttypeid_
+
+ref is prefixed vegsystemreferanse for the request.
+"""
+function extract_split_fartsgrense(o, ref)
+    ref_from, ref_to = extract_from_to_meter(ref)
+    @assert hasproperty(o, :metadata) ref
+    @assert hasproperty(o, :objekter) ref
+    @assert o.metadata.antall == length(o.objekter) ref
+    indices = collect(1:o.metadata.antall)
+    # Keep top-level indices which has relevant segments
+    relevant_indices = filter(indices) do i
+        objekt = o.objekter[i]
+        @assert hasproperty(objekt, :vegsegmenter) ref
+        vegsegmenter = objekt.vegsegmenter
+        relevant_segments = filter(vegsegmenter) do s
+            is_segment_relevant(ref, s)
         end
-        sub_Δls = Float64[]
-        for id in subref_ids
-            println("r = $r    id = $id")
-            url = "vegobjekter/$vegobjekttype_id/$id/1"
-            sub_o = nvdb_request(url)[1]
-            @assert hasproperty(sub_o, :lokasjon)
-            @assert length(sub_o.egenskaper) == 3
-            @assert hasproperty(sub_o.egenskaper[2], :verdi)
-            @assert sub_o.egenskaper[2].enhet.navn == "Prosent"
-            @assert hasproperty(sub_o.lokasjon, :lengde)
-            @assert startswith(sub_o.geometri.wkt, "LINESTRING Z(")
-            @assert hasproperty(sub_o, :geometri)
-            @assert hasproperty(sub_o.lokasjon, :vegsystemreferanser)
-            @assert length(sub_o.lokasjon.vegsystemreferanser) == 1
-            @assert hasproperty(sub_o.lokasjon.vegsystemreferanser[1], :strekning)
-            @assert hasproperty(sub_o.lokasjon.vegsystemreferanser[1].strekning, :fra_meter)
-            @assert hasproperty(sub_o.lokasjon.vegsystemreferanser[1].strekning, :til_meter)
-            # The subdivision may include parts outside of the requested ref.
-            # We will want to truncate and keep only the relevant parts.
-            # TODO: See if we can get the linestring from elsewhere. 
-            # We do need to ask for Fartsdemper, Fartsgrense 
-
-            # Parse text to number collection
-            linestring = map(split(sub_o.geometri.wkt[14:end-1], ',')) do v
-                NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
-            end
-
-
-
-
-
-
-
-            # For checking that subdivisions sum up to the total.
-            sub_Δl = sub_o.lokasjon.lengde
-            push!(sub_Δls, sub_Δl)
-            # Check that subdivision inclination is average from start to end
-            inclination = 0.01 * sub_o.egenskaper[2].verdi  # Percent is unimpressive
-            Δh = inclination * sub_Δl
-            @assert abs(linestring[end][3] - linestring[1][3] - Δh ) < 1
-
-
-            # For output
-            push!(inclinations, inclination)
-            push!(Δls_redivided, sub_Δl)
-            push!(multi_linestring, linestring)
-        end
-        @assert abs(sum(sub_Δls) - Δl) < 1 "sub_Δls = $sub_Δls   sum(sub_Δls) = $(sum(sub_Δls)) \n\t Δl = $Δl"
+        length(relevant_segments) > 0
     end
-    inclinations, Δls_redivided, multi_linestring
-
+    objekter = o.objekter[relevant_indices]
+    fartsgrense_objekter = map(objekter) do ob
+        es = filter(ob.egenskaper) do e
+            @assert hasproperty(e, :navn)
+            e.navn == "Fartsgrense"
+        end
+        @assert length(es) == 1
+        es[1]
+    end
+    fartsgrenser = map(fartsgrense_objekter) do fa
+        @assert hasproperty(fa, :enhet)
+        enhet = fa.enhet
+        @assert hasproperty(enhet, :kortnavn)
+        @assert enhet.kortnavn == "km/h"
+        fa.verdi
+    end
+    if length(fartsgrenser) == 1
+    end
+    strekninger = map(objekter) do ob
+        @assert hasproperty(ob, :vegsegmenter) ref
+        vegsegmenter = filter(ob.vegsegmenter) do s
+            is_segment_relevant(ref, s)
+        end
+        @assert length(vegsegmenter) == 1 ref
+        @assert hasproperty(vegsegmenter[1], :vegsystemreferanse) ref
+        vegsystemreferanse = vegsegmenter[1].vegsystemreferanse
+        @assert hasproperty(vegsystemreferanse, :strekning) ref
+        vegsystemreferanse.strekning
+    end
+    fra_meters = map(strekninger) do s
+        @assert hasproperty(s, :fra_meter) 
+        s.fra_meter
+    end
+    til_meters = map(strekninger) do s
+        @assert hasproperty(s, :til_meter) 
+        s.til_meter
+    end
+    permutation = sortperm(fra_meters)
+    fra_m_s = fra_meters[permutation]
+    til_m_s = til_meters[permutation] # Could be used for double checking continuity
+    fartsgrenser_s = fartsgrenser[permutation]
+    _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from)
 end
-=#
+function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from)
+    if length(fartsgrenser_s) == 0
+        return (NaN, 0, 0)
+    elseif length(fartsgrenser_s) == 1
+        return 1.0, fartsgrenser_s[1], fartsgrenser_s[1]
+    elseif length(fartsgrenser_s) == 2
+        if fartsgrenser_s[1] == fartsgrenser_s[2]
+            return 1.0, fartsgrenser_s[1], fartsgrenser_s[1]
+        else
+            split_after_ref_from = til_m_s[1]- ref_from
+            fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
+            return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[2]
+        end
+    elseif length(fartsgrenser_s) == 3
+        # Make sure two of three are equal
+        @assert fartsgrenser_s[1] == fartsgrenser_s[2] ||
+            fartsgrenser_s[2] == fartsgrenser_s[3] ||
+            fartsgrenser_s[1] == fartsgrenser_s[3] ref
+        if fartsgrenser_s[1] == fartsgrenser_s[2]
+            split_after_ref_from = til_m_s[2]- ref_from
+            fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
+            return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[3]
+        else
+            split_after_ref_from = til_m_s[1]- ref_from
+            fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
+            return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[2]
+        end
+    else
+        throw("Unexpected length(fartsgrenser_s). Ref = $ref")
+    end
+end
+
+

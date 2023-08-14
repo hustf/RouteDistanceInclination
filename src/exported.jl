@@ -12,7 +12,7 @@ function route_data(easting1::T, northing1::T, easting2::T, northing2::T) where 
     @assert ! startswith(refs[1], "Error") refs[1]
     lengths = extract_length(q)
     mls = extract_multi_linestrings(q)
-    @show refs
+
     fart_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs)
     # Ask nicely for fartsgrense, fartsdemper.
     # Then we might calculate curvature and output spline functions.

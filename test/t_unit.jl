@@ -1,6 +1,6 @@
 using Test
 using RouteSlopeDistance
-using RouteSlopeDistance: LOGSTATE
+using RouteSlopeDistance: LOGSTATE, correct_to_increasing_distance
 import HTTP
 using JSON3: pretty
 
@@ -88,3 +88,12 @@ pop!(body, :srid)
 o2 = nvdb_request(url_ext, "POST"; body)[1]
 @test o2.metadata.status_tekst == "IKKE_FUNNET_STARTPUNKT"
 # Conclusion: 'start' and 'slutt' must be in UTM33 (or a higher resolution equivalent)
+
+ref = "1516 KV1123 S1D1 m1818-1860"
+@test correct_to_increasing_distance(ref) == ref
+ref = "1516 KV1123 S1D1 m1818-1769"
+@test correct_to_increasing_distance(ref) == "1516 KV1123 S1D1 m1769-1818"
+ref = "KV1123 S1D1 m1818-1860"
+@test correct_to_increasing_distance(ref) == ref
+ref = "KV1123 S1D1 m1818-1769"
+@test correct_to_increasing_distance(ref) == "KV1123 S1D1 m1769-1818"

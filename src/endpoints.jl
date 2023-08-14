@@ -78,11 +78,14 @@ end
 
 https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/openapi/#/Vegobjekter/get_vegobjekter__vegobjekttypeid_
 """
-function get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, vegsystemreferanse::String; inkluder = "", alle_versjoner = false)
+function get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, vegsystemreferanse::String; 
+    inkluder = "", alle_versjoner = false, segmentering = false, arm = false)
     u = "vegobjekter/$vegobjekttype_id"
-    a = urlstring(;  vegsystemreferanse = vegsystemreferanse, inkluder, alle_versjoner)
+    a = urlstring(;  vegsystemreferanse = vegsystemreferanse, inkluder, alle_versjoner, segmentering, arm)
     url = build_query_string(u, a)
-    nvdb_request(url)[1]
+    o, waitsec = nvdb_request(url)
+    isempty(o) && throw("Request failed, check connection")
+    o
 end
 
 #=

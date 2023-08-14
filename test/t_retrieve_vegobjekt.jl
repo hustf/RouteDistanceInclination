@@ -1,6 +1,8 @@
 using Test
 using RouteSlopeDistance
-using RouteSlopeDistance: LOGSTATE, nvdb_request, get_vegobjekter__vegobjekttypeid_, fartsgrense_from_prefixed_vegsystemreferanse
+using RouteSlopeDistance: LOGSTATE, nvdb_request, get_vegobjekter__vegobjekttypeid_,
+    fartsgrense_from_prefixed_vegsystemreferanse, is_segment_relevant, extract_from_to_meter,
+    extract_strekning_delstrekning
 import HTTP
 using JSON3: pretty
 
@@ -13,7 +15,9 @@ refs = ["1516 FV61 S5D1 m1085-1273"
        "1515 FV61 S5D1 m1527-1589"
        "1515 FV61 S5D1 m1589-1879"]
 
-
+ref_from, ref_to = extract_from_to_meter(refs[1])
+@test ref_from == 1085
+@test ref_to == 1273
 
 # First get the catalogue of the ~400 types of info we can ask for
 url_ext = "vegobjekttyper"
@@ -86,8 +90,84 @@ refs =  ["1517 FV61 S3D1 m86 KD1 m9-13"
        "1517 FV61 S3D1 m425-444"
        "1517 FV61 S3D1 m444-473"
        "1517 FV61 S3D1 m473-477"
-       "1517 FV61 S3D1 m477-481"]
+       "1517 FV61 S3D1 m477-481"
+       "1516 FV61 S4D1 m4731-5230"
+       "1515 FV654 S2D1 m2967-3028"
+       "1516 FV61 S3D30 m1136-1136"
+       "1516 FV61 S4D1 m2608-2659"
+       "1515 FV654 S1D1 m0-6"
+       ]
+ref = refs[9]
+ref_from, ref_to = extract_from_to_meter(ref)
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+@test hasproperty(o, :objekter)
+@test length(o) == 2
+vegsegmenter1 = o.objekter[1].vegsegmenter;
+@test length(vegsegmenter1) == 1 ref
+@test hasproperty(o.objekter[2], :vegsegmenter)
+vegsegmenter2 = o.objekter[2].vegsegmenter
+@test length(vegsegmenter2) == 3
+# We have four vegsegmenter, but we have only 
+# two fartsgrense. Need filtering!
+vs = [vegsegmenter1[1], vegsegmenter2[1], vegsegmenter2[2], vegsegmenter2[3]]
+@test is_segment_relevant(ref, vs[1]) 
+@test ! is_segment_relevant(ref, vs[2]) 
+@test ! is_segment_relevant(ref, vs[3]) 
+@test is_segment_relevant(ref, vs[4]) 
 
-fartsgrense_from_prefixed_vegsystemreferanse.(refs) 
+ref = refs[6]
+ref_from, ref_to = extract_from_to_meter(ref)
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test ! is_segment_relevant(ref, vs[1])
+@test is_segment_relevant(ref, vs[2])
+@test ! is_segment_relevant(ref, vs[3])
 
+
+ref = refs[8]
+ref_from, ref_to = extract_from_to_meter(ref)
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test ! is_segment_relevant(ref, vs[1])
+@test is_segment_relevant(ref, vs[2])
+@test ! is_segment_relevant(ref, vs[3])
+
+ref = refs[18]
+ref_from, ref_to = extract_from_to_meter(ref)
+@test extract_strekning_delstrekning(ref) == "S1D1"
+@test extract_strekning_delstrekning("FV654 S1D1 m0-6") == "S1D1"
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test length(vs) == 7
+@test is_segment_relevant(ref, vs[1])
+@test ! is_segment_relevant(ref, vs[2])
+@test ! is_segment_relevant(ref, vs[3])
+@test ! is_segment_relevant(ref, vs[4])
+@test ! is_segment_relevant(ref, vs[5])
+@test ! is_segment_relevant(ref, vs[6])
+@test ! is_segment_relevant(ref, vs[7])
+
+
+# Tests on a higher level
+ref = refs[9]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (0.2545454545454545, 50, 60)
 ref = refs[5]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 50, 50)
+ref = refs[1]
+@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref)[1])
+ref = refs[16]
+@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref)[1])
+ref = refs[17]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 70, 70) 
+ref = refs[14]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (0.8471042084168335, 70, 60)
+ref = refs[15]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 60, 60)
+ref = refs[6]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 50, 50)
+ref = refs[8]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 50, 50)
+
+
+@test fartsgrense_from_prefixed_vegsystemreferanse.(refs) isa Vector{Tuple{Float64, Int64, Int64}} 
+

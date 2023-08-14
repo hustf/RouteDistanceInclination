@@ -4,16 +4,13 @@ M = ["Hareid bussterminal" 36975.94566374121 6.947658805705906e6; "Hareid ungdom
 
 
 rws = 1:(size(M)[1])
-for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
+#for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
+for (start, stop) in zip(rws[26: (end - 1)], rws[27:end])
     println()
     na1, ea1, no1 = M[start, :]
     na2, ea2, no2 = M[stop, :]
-    print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+    println(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
     tups = route_data(ea1, no1, ea2, no2)
-    #for (r, l) in zip(refs, lengths)
-    #     print(rpad(r, 35) , "  l = ",  l)
-    #     print("\n", lpad(" ", 72))
-    #end
-    print("   ", tups)
+    display(tups)
     println()
-end
+end 
