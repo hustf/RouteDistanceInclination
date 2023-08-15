@@ -1,7 +1,7 @@
 """
     route_data(easting1::T, northing1::T, easting2::T, northing2::T) where T <: Float64
 
-    --> refs, Δls, multi_linestrings
+    --> refs, lengths, multi_linestrings
 
 Arguments are start and end points given in UTM33 coordinates.
 """
@@ -12,13 +12,15 @@ function route_data(easting1::T, northing1::T, easting2::T, northing2::T) where 
     @assert ! startswith(refs[1], "Error") refs[1]
     lengths = extract_length(q)
     mls = extract_multi_linestrings(q)
-
     fart_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs)
-    # Ask nicely for fartsgrense, fartsdemper.
-    # Then we might calculate curvature and output spline functions.
-    # But points are useful, too, for feedback, so maybe put that elsewhere.-+
-    #inclination, inc_lengde = get_vegobjekter_vegobjekttypeid_(refs, Δls)
-    # Ask nicely for speed limit
-    #Δl, inclination, inc_lengde
-    fart_tuples
+    # End stops may be without defined fartsgrense, and we need 
+    # a start value.
+    if isnan(fart_tuples[1][1])
+        fart_tuples[1] = (1.0, 50, 50)
+    end
+    # Detail fartsgrense on every point of each multi_linestring.
+    # A few fartgrenser may be missing. In those cases, we assume 
+    # the previous
+    fart_mls = fartsgrense_at_intervals(fart_tuples, mls)
+    refs, lengths, mls, fart_mls
 end

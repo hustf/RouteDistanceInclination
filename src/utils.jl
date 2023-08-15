@@ -229,4 +229,58 @@ function is_segment_relevant(ref, vegsegment)
     false
 end 
 
+"""
+    fartsgrense_at_intervals_in_multilinestring(tupl, ml)
 
+Applies an (interpolated) fartsgrense at each point in the
+vector of 3d-points, 'ml', based on 'tupl'.
+"""
+function fartsgrense_at_intervals(fart_tuples, mls)
+    v = Vector{Vector{Float64}}()
+    @assert length(fart_tuples) == length(mls)
+    prev_tupl = fart_tuples[1]
+    tupl = fart_tuples[1]
+    i = 1
+    while i <= length(mls)
+        if ! isnan(fart_tuples[i][1])
+            tupl = fart_tuples[i]
+        else
+            tupl = prev_tupl
+        end
+        ml = mls[i]
+        push!(v, fartsgrense_at_intervals_in_multilinestring(tupl, ml))
+        i += 1
+        prev_tupl = tupl
+    end
+    v
+end 
+
+"""
+    fartsgrense_at_intervals_in_multilinestring(tupl, ml)
+
+Applies an (interpolated) fartsgrense for each interval
+between points in 'ml', based on 'tupl'.
+
+Hence, if ml has N points, this returns N-1 fartsgrenser.
+"""
+function fartsgrense_at_intervals_in_multilinestring(tupl, ml)
+    @assert ! isnan(tupl[1])
+    c = tupl[1]
+    v_start = tupl[2]
+    v_end = tupl[3]
+    pts_start = ml[1:(end -1)]
+    pts_end = ml[2:end]
+    Δls = distance_between.(pts_start, pts_end)
+    x_at_end_of_interval = cumsum(Δls./sum(Δls))
+    x_at_start_of_interval = vcat([0.0], x_at_end_of_interval[1:(end -1)])
+    map(zip(x_at_start_of_interval, x_at_end_of_interval)) do (xs, xe)
+        if xe <= c
+            Float64(v_end)
+        elseif xe > c && xs < c
+            frac = (c -xs)
+            v_start * frac + v_end * (1 - frac)
+        else
+            Float64(v_start)
+        end
+    end
+end
