@@ -97,3 +97,4 @@ ref = "KV1123 S1D1 m1818-1860"
 @test correct_to_increasing_distance(ref) == ref
 ref = "KV1123 S1D1 m1818-1769"
 @test correct_to_increasing_distance(ref) == "KV1123 S1D1 m1769-1818"
+

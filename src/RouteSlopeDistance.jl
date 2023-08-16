@@ -16,4 +16,5 @@ include("exported.jl")
 include("patch_links_and_coordinates.jl")
 include("utils.jl")
 include("vegdata_from_vegsystemreferanse.jl")
+include("bsplines.jl")
 end
