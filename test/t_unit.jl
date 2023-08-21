@@ -98,3 +98,7 @@ ref = "KV1123 S1D1 m1818-1860"
 ref = "KV1123 S1D1 m1818-1769"
 @test correct_to_increasing_distance(ref) == "KV1123 S1D1 m1769-1818"
 
+@test is_rpoint_in_ref("1515 PV3080 S1D1 m20-84", "1515 PV3080 S1D1 m56")
+@test ! is_rpoint_in_ref("1515 VW3080 S1D1 m20-84", "1515 PV3080 S1D1 m56")
+@test ! is_rpoint_in_ref("1515 PV3080 S1D1 m20-84", "1515 PV3080 S1D1 m85")
+@test ! is_rpoint_in_ref("1515 PV3080 S1D1 m20-84", "1515 PV3080 S1D1 m15")

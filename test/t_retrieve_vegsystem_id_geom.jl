@@ -31,6 +31,7 @@ o = nvdb_request(url_ext, "POST"; body)[1]
 l_straight = sqrt((easting2 - easting1)^2 +(northing2 - northing1)^2)
 @test o.metadata.lengde > l_straight
 @test abs(l_straight / o.metadata.lengde - 1) < 0.01
+o.geometri
 
 # We need to make several requests in order to get e.g. 'fartsgrense'. 
 # Let's grab the vegsystemreferanses. 
@@ -95,6 +96,7 @@ northing1 = 6939377.37
 easting1 = 25468    
 northing2 = 6939333.54
 easting2 = 25363.46
+#=
 body = Dict([
     :typeveg                => "enkelbilveg"
     :konnekteringslenker    => false
@@ -104,7 +106,19 @@ body = Dict([
     :behold_trafikantgruppe => true
     :slutt                  => "$easting2 , $northing2"
     :tidspunkt              => "2023-07-28"])
-
+=#
+body = Dict([
+    :typeveg                => "kanalisertVeg,enkelBilveg,rampe,rundkjøring,gangOgSykkelveg"
+    :konnekteringslenker    => true
+    :start                  => "$easting1 , $northing1"
+    :trafikantgruppe        => "K"
+    :maks_avstand  => 10
+    :omkrets => 100
+    :detaljerte_lenker      => true
+    :behold_trafikantgruppe => true
+    :slutt                  => "$easting2 , $northing2"
+    :tidspunkt              => "2023-07-28"
+    ])
 o = nvdb_request(url_ext, "POST"; body)[1]
 multi_linestring = map(o.vegnettsrutesegmenter) do s
     map(split(s.geometri.wkt[14:end-1], ',')) do v
@@ -116,3 +130,25 @@ l3d = length_of_linestring(ls)
 l2d = length_of_projected_linestring(ls)
 @test round(l3d; digits = 3) == o.metadata.lengde
 @test round(l2d; digits = 3) < o.metadata.lengde
+@test ls[1][1] == 25468.054
+@test o.vegnettsrutesegmenter[1].geometri.srid == 5973
+
+# Try to get higher precision geometri TODO
+body = Dict([
+    :typeveg                => "kanalisertVeg,enkelBilveg,rampe,rundkjøring,gangOgSykkelveg"
+    :konnekteringslenker    => true
+    :start                  => "$easting1 , $northing1"
+    :trafikantgruppe        => "K"
+    :maks_avstand  => 10
+    :omkrets => 100
+    :detaljerte_lenker      => true
+    :behold_trafikantgruppe => true
+    :slutt                  => "$easting2 , $northing2"
+    :tidspunkt              => "2023-07-28"
+    :srid                   => 5972    # Ikke dokumentert for POST-metoden...
+    ])
+# 4326, wgs84, 5975, 5974
+# OK: utm33, 5973
+# The precision is not actually affected by srid...
+o = nvdb_request(url_ext, "POST"; body)[1]
+@test ls[1][1] == 25468.054

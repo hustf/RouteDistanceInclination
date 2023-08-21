@@ -2,7 +2,7 @@ using Test
 using RouteSlopeDistance
 using RouteSlopeDistance: LOGSTATE, nvdb_request, get_vegobjekter__vegobjekttypeid_,
     fartsgrense_from_prefixed_vegsystemreferanse, is_segment_relevant, extract_from_to_meter,
-    extract_strekning_delstrekning
+    extract_strekning_delstrekning, extract_prefixed_vegsystemreferanse
 import HTTP
 using JSON3: pretty
 
@@ -27,7 +27,7 @@ catalogue = Dict(map(catalogue_obj) do o
 end)
 #print.(lpad.(sort(collect(keys(catalogue))), 40));
 catalogue["Fartsgrense"]
-
+catalogue["Fartsdemper"]
 # We are interested in "Fartsgrense"
 url_ext = "vegobjekter/"
 vegobjekttype_id = catalogue["Fartsgrense"][:id]
@@ -171,3 +171,52 @@ ref = refs[8]
 
 @test fartsgrense_from_prefixed_vegsystemreferanse.(refs) isa Vector{Tuple{Float64, Int64, Int64}} 
 
+
+
+# Fartsdemper. These are few, and we can test out other ways to find those than
+# making a request per each and every lenke.
+catalogue["Fartsdemper"][:id]
+vegobjekttype_id = 103
+kommune = 1517
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter")
+@test o.metadata.antall == 2
+@test o.objekter[1].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D1 m3593"
+@test o.objekter[2].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D1 m3398"
+
+catalogue["Fartsdemper"][:id]
+vegobjekttype_id = 103
+kommune = "1516"
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter,egenskaper")
+@test o.metadata.antall == 5
+@test o.objekter[1].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m254"
+@test o.objekter[2].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m158"
+@test o.objekter[3].vegsegmenter[1].vegsystemreferanse.kortform == "FV5882 S1D1 m66"
+@test o.objekter[4].vegsegmenter[1].vegsystemreferanse.kortform == "FV5884 S1D1 m1320"
+@test o.objekter[5].vegsegmenter[1].vegsystemreferanse.kortform == "FV5884 S1D1 m1445"
+
+for obj in o.objekter
+     profilegenskaper = filter(e->e.navn == "Profil", obj.egenskaper)
+     if length(profilegenskaper) == 1
+        profil = profilegenskaper[1]
+        println(profil[:verdi])
+     else
+        @show obj.egenskaper
+     end
+end
+
+# Since not all fartshumper have interesting properties registered, maybe just
+# apply a 15 km/h speed reduction......
+# In that case, use: 
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter")
+
+fartshumper = String[]
+for obj in o.objekter
+    @test hasproperty(obj, :vegsegmenter)
+    @test length(obj.vegsegmenter) == 1
+    vegsegment = obj.vegsegmenter[1]
+    @test hasproperty(vegsegment, :vegsystemreferanse)
+    vegsystemreferanse = vegsegment.vegsystemreferanse
+    @test hasproperty(vegsystemreferanse, :kortform)
+    push!(fartshumper, vegsystemreferanse.kortform)
+end
+all_bumpd = extract_prefixed_vegsystemreferanse(o)

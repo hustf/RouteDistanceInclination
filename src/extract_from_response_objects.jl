@@ -1,9 +1,9 @@
 # Extract things we need from json3 objects we get from the API.
 """
-    extract_prefixed_vegsystemreferanse(o)
+    extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
     --> Vector{String}
 
-Call this before extracting other data,
+Call this before extracting other route data,
 since this replaces references with an extended 
 error message.
 """
@@ -53,11 +53,53 @@ function extract_prefixed_vegsystemreferanse(q::Quilt)
     refs
 end
 
+"""
+    extract_prefixed_vegsystemreferanse(o)
+
+Works on objects like retrieved with
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune = "1515,1516", inkluder = "vegsegmenter")
+"""
+function extract_prefixed_vegsystemreferanse(o)
+    map(o.objekter) do obj
+        @assert hasproperty(obj, :vegsegmenter)
+        @assert length(obj.vegsegmenter) == 1
+        vegsegment = obj.vegsegmenter[1]
+        @assert hasproperty(vegsegment, :vegsystemreferanse)
+        r = vegsegment.vegsystemreferanse
+        @assert hasproperty(r, :vegsystem)
+        @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
+        @assert hasproperty(r, :kortform)
+        sref = r.kortform
+        k = vegsegment.kommune
+        "$k $sref"
+    end
+end
+
+
+
+
 
 
 """
     extract_length(o)
-    --> Vector
+    extract_length(q::Quilt)
+    --> Vector{Float64}
+
+Length of each segments from dabase. Sum is checked against metadata. 
+
+# Example
+```
+julia> o
+JSON3.Object{Base.CodeUnits{UInt8, String}, Vector{UInt64}} with 2 entries:
+  :vegnettsrutesegmenter => Object[{…
+  :metadata              => {…
+
+julia> println(extract_length(o))
+[13.654, 7.517, 9.066, 12.945, 154.225, 95.455, 80.824, 34.79, 74.79, 9.331, 24.277, 96.441, 24.006]
+
+julia> println(refs)
+["1517 FV61 S3D1 m3533-3547", "1517 FV61 S3D1 m3547-3555", "1517 FV61 S3D1 m3555-3564", "1517 FV61 S3D1 m3564-3577", "1517 FV61 S3D1 m3577-3731", "1517 FV61 S3D1 m3731-3826", "1517 FV61 S3D1 m3826-3907", "1517 FV61 S3D1 m3907-3942", "1517 FV61 S3D1 m3942-4017", "1517 FV61 S3D1 m4017-4026", "1517 FV61 S3D1 m4026-4050", "1517 FV61 S3D1 m4050-4147", "1517 FV61 S3D1 m4147-4171"]
+```
 """
 function extract_length(o)
     @assert hasproperty(o, :vegnettsrutesegmenter)
@@ -102,6 +144,8 @@ function extract_multi_linestrings(o, ea, no)
     check_continuity_of_multi_linestrings(multi_linestring)
     @assert ! isempty(multi_linestring)
     # Check length with straight lines between points.
+
+    # TODO use 
     Δl_linestrings = map(length_of_linestring, multi_linestring)
     if abs(round(sum(Δl_linestrings)) - round(o.metadata.lengde)) > 4
         msg = "Trouble when checking length totals. o.metadata.lengde = $(o.metadata.lengde)\n" 
@@ -130,10 +174,7 @@ end
 
 Returns (NaN, 0, 0) when no interpretation is found.
     
-o is the object returned from request made in 
-
-    fartsgrense_from_prefixed_vegsystemreferanse
-     > get_vegobjekter__vegobjekttypeid_
+Called with `o` from request made within `fartsgrense_from_prefixed_vegsystemreferanse`
 
 ref is prefixed vegsystemreferanse for the request.
 """

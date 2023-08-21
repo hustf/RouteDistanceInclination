@@ -1,32 +1,8 @@
 # Small functions used elsewhere
 
-"""
-    length_of_linestring(ls::Vector{Tuple{Float64, Float64, Float64}})
-    --> Float64
 
-Assuming straight lines between points
-"""
-function length_of_linestring(ls::Vector{Tuple{Float64, Float64, Float64}})
-    l = 0.0
-    prevpt = ls[1]
-    for pt in ls[2:end]
-        l += distance_between(prevpt, pt)
-        prevpt = pt
-    end
-    l
-end
 
-"""
-distance_between(pt1, pt2)
 
-Euclidean distance between 3d points
-"""
-function distance_between(pt1, pt2)
-    Δx = pt2[1] - pt1[1]
-    Δy = pt2[2] - pt1[2]
-    Δz = pt2[3] - pt1[3]
-    hypot(Δx, Δy, Δz)
-end
 
 
 """
@@ -163,6 +139,15 @@ function extract_strekning_delstrekning(vegsystemreferanse::String)
     String(excluding_position[end])
 end
 
+"""
+    extract_vegnummer(vegsystemreferanse::String)
+
+Assumes ending like: 1515 FV61 S5D1 m1401-1412
+"""
+function extract_vegnummer(vegsystemreferanse::String)
+    excluding_position_and_strekning = split(vegsystemreferanse, ' ')[1:(end - 2)]
+    String(excluding_position_and_strekning[end])
+end
 
 """
     correct_to_increasing_distance(vegsystemreferanse::String)
@@ -229,6 +214,33 @@ function is_segment_relevant(ref, vegsegment)
     false
 end 
 
+
+"""
+    is_rpoint_in_ref(rpoint, ref)
+
+# Example
+```
+julia> is_rpoint_in_ref("1515 PV3080 S1D1 m20-84", "1515 PV3080 S1D1 m56")
+true
+```
+"""
+function is_rpoint_in_ref(rpoint, ref)
+    if extract_vegnummer(ref) ==  extract_vegnummer( rpoint)
+        if extract_strekning_delstrekning(ref) ==  extract_strekning_delstrekning(rpoint)
+            enveloping = extract_from_to_meter(ref)
+            point = extract_from_to_meter(rpoint)
+            @assert length(point) == 1
+            if enveloping[1] <= point[1]
+                if enveloping[2] >= point[1]
+                    return true
+                end
+            end
+        end
+    end
+    false
+end
+
+
 """
     fartsgrense_at_intervals_in_multilinestring(tupl, ml)
 
@@ -265,15 +277,15 @@ Hence, if ml has N points, this returns N-1 fartsgrenser.
 """
 function fartsgrense_at_intervals_in_multilinestring(tupl, ml)
     @assert ! isnan(tupl[1])
+    # This is where the split happens (in 0..1)
     c = tupl[1]
+    # This is the initial fartsgrense
     v_start = tupl[2]
+    # This is the fartsgrense we change to
     v_end = tupl[3]
-    pts_start = ml[1:(end -1)]
-    pts_end = ml[2:end]
-    Δls = distance_between.(pts_start, pts_end)
-    x_at_end_of_interval = cumsum(Δls./sum(Δls))
-    x_at_start_of_interval = vcat([0.0], x_at_end_of_interval[1:(end -1)])
-    map(zip(x_at_start_of_interval, x_at_end_of_interval)) do (xs, xe)
+    # Unitless 1-dim positions along multi_linestring:
+    s_ul_at_start_of_interval, s_ul_at_end_of_interval = unitless_interval_progression_pairs(ml)
+    map(zip(s_ul_at_start_of_interval, s_ul_at_end_of_interval)) do (xs, xe)
         if xe <= c
             Float64(v_end)
         elseif xe > c && xs < c
@@ -284,3 +296,61 @@ function fartsgrense_at_intervals_in_multilinestring(tupl, ml)
         end
     end
 end
+
+
+"""
+    (speed_limitations::Vector{Vector{Float64}}, prefixed_refs, mls)
+
+Instead of making a request for pretty rare speedbumps
+per small stretch of road, we make one for the kommune and ignore
+irrelevant speedbumps.
+
+This modifies speed-limitations in-place by reducing by 15 km/h 
+at the location of a speed bump.
+
+Some speedbumps contain detailed info,
+but some don't. We will treat all the same.
+
+The reduction is according to section 3.11 in 
+
+'https://www.vegvesen.no/globalassets/fag/handboker/hb-v128-fartsdempende-tiltak.pdf'
+
+for heavy vehicles.
+"""
+function modify_fartsgrense_with_speedbumps!(speed_limitations::Vector{Vector{Float64}}, prefixed_refs, mls)
+    n = length(speed_limitations)
+    @assert n == length(prefixed_refs)
+    # Find which kommune nos are present if prefixed_refs.
+    all_nos = map(prefixed_refs) do r
+        split(r, ' ')[1]
+    end
+    nos = unique(all_nos)
+    kommune = join(nos, ',')
+    # Some speedbumps contain detailed info,
+    # but some don't. We will treat all the same.
+    vegobjekttype_id = 103 
+    o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter")
+    all_bumps =  extract_prefixed_vegsystemreferanse(o)
+    for (i, enveloping_ref) in enumerate(prefixed_refs)
+        relevant_bumps = filter(b -> is_rpoint_in_ref(b, enveloping_ref), all_bumps)
+        if length(relevant_bumps) > 0
+            println("found $relevant_bumps contained by $enveloping_ref")
+            for bump in relevant_bumps
+                bump_at_meter = extract_from_to_meter(bump)[1]
+                ref_start_at_meter = extract_from_to_meter(enveloping_ref)[1]
+                ml = mls[i]
+                s_at_start_of_interval, _ = interval_progression_pairs(ml)
+                for (j, s) in enumerate(s_at_start_of_interval)
+                    if s + ref_start_at_meter >= bump_at_meter
+                        # Reduce the speed limit at this one point, where
+                        # the bump is.
+                        speed_limitations[i][j] -= 15
+                        break # exit loop placing this bump
+                    end
+                end
+            end
+        end
+    end
+    speed_limitations
+end
+

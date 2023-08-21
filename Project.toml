@@ -1,7 +1,7 @@
 name = "RouteSlopeDistance"
 uuid = "07025e9e-5a27-4179-b043-88080b1ee239"
 authors = ["hustf <hustf@users.noreply.github.com> and contributors"]
-version = "0.0.9"
+version = "0.0.10"
 
 [deps]
 BSplines = "488c2830-172b-11e9-1591-253b8a7df96d"
@@ -10,7 +10,10 @@ HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 IniFile = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+Smoothers = "012d725f-b4dd-4916-8440-03955fc52575"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 

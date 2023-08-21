@@ -22,6 +22,7 @@ na, ea, no = M[i, :]
 vegsystemreferanse = get_posisjon(ea, no)
 
 
+# Some of these won't be found. We patch that up elsewhere
 for i in 1:(size(M)[1])
     println()
     na, ea, no = M[i, :]
