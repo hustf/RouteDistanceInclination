@@ -1,15 +1,15 @@
 # RouteSlopeDistance.jl
 
-The package provides details along a route determined by start and end points.
+The package exports `route_data(A, B)`, where `A` and `B` are UTM33 coordinates. 
 
-Data is pulled from Norsk Vegdatabase. Results include speed limits and inclination along the route.
+It harvests speed limits, geometry and related data from Norsk Vegdatabase. To reduce the number API calls, the package serializes results in a binary file, until you `delete_memoization_file()`. 
 
-The data may be used for calculating travel times and energy consumption with different vehicle models. 
+Horizontal curvature is found using Bsplines, and applied as further speed reduction. 
+
+The result dictionary may be used for calculating travel times and energy consumption with different vehicle models. 
 A good model would include available power, vehicle mass and gear shift times. An advanced model would include
 traffic data, which can also be pulled using this package.
 
-The API base url, version, etc. is configureable in the .ini file, and could possibly be compatible with other national systems.
-
-If an endpoint is not wrapped in ` exported.jl`, use `nvdb_request` directly. See inline docs and the API docs:
-
-https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/
+Database error corrections can be edited in the .ini file. The API base url, version, etc. is configureable in the .ini file. 
+ 
+You may also call `nvdb_request` directly. API docs: https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/

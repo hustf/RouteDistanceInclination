@@ -1,3 +1,4 @@
+using Test
 using RouteSlopeDistance
 using RouteSlopeDistance: patched_post_beta_vegnett_rute, 
     extract_prefixed_vegsystemreferanse,
@@ -9,7 +10,8 @@ using RouteSlopeDistance: patched_post_beta_vegnett_rute,
     fartsgrense_at_intervals,
     modify_fartsgrense_with_speedbumps!,
     interval_progression_pairs,
-    progression_at_each_coordinate
+    progression_at_each_coordinate,
+    slope_at_each_coordinate
 using JSON3: pretty
 
 
@@ -41,28 +43,74 @@ progression = append!([0.0], cumsum(lengths))
 # 0.000389 seconds (608 allocations: 76.211 KiB)
 @time mls = extract_multi_linestrings(q);
 
-@time detailed_progression = progression_at_each_coordinate(mls, progression)
+@test length(progression) == length(mls) + 1
 
+#0.000032 seconds (147 allocations: 28.391 KiB)
+@time progression_detailed= progression_at_each_coordinate(mls, progression)
+
+@test issorted(progression_detailed)
 
 # length(refs) == 13 in this typical case
 # 0.000182 seconds (817 allocations: 59.422 KiB)
-@time r_extremals, s_extremals = extract_curvature_extremals_from_multi_linestrings(mls)
+@time r_extremals, s_extremals_local = extract_curvature_extremals_from_multi_linestrings(mls)
+s_extremals = s_extremals_local .+ progression[1:(end - 1)]
 
-# 1.487805 seconds (51.99 k allocations: 4.174 MiB, 3.54% compilation time)
+# 5.897437 seconds (46.52 k allocations: 3.515 MiB, 0.60% compilation time)
 @time fartsgrense_tuples = map(refs) do ref
     fartsgrense_from_prefixed_vegsystemreferanse(ref)
 end
 
 #  0.000038 seconds (121 allocations: 13.375 KiB)
-@time speed_limitations = fartsgrense_at_intervals(fartsgrense_tuples, mls)
+@time speed_limitations_nested = fartsgrense_at_intervals(fartsgrense_tuples, mls)
 
 # 1.197382 seconds (2.33 k allocations: 234.508 KiB)
-@time modify_fartsgrense_with_speedbumps!(speed_limitations, refs, mls, progression)
+@time modify_fartsgrense_with_speedbumps!(speed_limitations_nested, refs, mls)
 
 
-# Fartsgrenser could be stored in a table, but keeping an updated
-# table is a lot of work.
-# We think it will be better to serialize each call to route_data
+# Unpack nested speed limitations.
+speed_limitations_detailed = vcat(speed_limitations_nested...)
+@test length(detailed_progression) == length(speed_limitations_detailed) + 1
+
+a_centripetal_max = 1.2
+v_centripetal_max = sqrt.(a_centripetal_max .* r_extremals) * 3.6
+for (s, v_c) in zip(s_extremals, v_centripetal_max) 
+    if ! isnan(s)
+        i = findfirst(t -> t >= s, progression_detailed)
+        if speed_limitations_detailed[i] >= v_c
+            println("Curvature limited velocity: $v_c km/h at $s m")
+            speed_limitations_detailed[i] = v_c
+        end
+    end
+end
+
+# 0.000021 seconds (15 allocations: 1.188 KiB)
+@time slope_detailed = slope_at_each_coordinate(mls)
+
+
+#########################
+# Curvature - speed tests
+#########################
+
+kalibrering = ["https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=23593.713839066448,6942485.5900078565&slutt=23771.052968726202,6942714.9388697725&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=10929.721370896965,6932488.729146618&slutt=10906.172339663783,6932221.839157347&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=38744.875253753446,6946346.347827989&slutt=38856.09116223373,6946141.295902717&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=17218.3379226189,6933105.362498406&slutt=17411.16742345906,6933361.249064187&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=19888.753066316945,6944574.509461373&slutt=20264.900856445194,6944368.952139658&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=26521.552530414192,6940216.455383167&slutt=26457.440704222478,6940123.788953421&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=26343.660416060884,6950023.898755312&slutt=26736.355686723255,6950277.5537265055&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=28758.084434766264,6945107.442628212&slutt=28872.074380539998,6945084.460240152&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=20957.20257390075,6939620.818590216&slutt=20637.109098991437,6939678.886214065&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=12406.263465148688,6933858.521046377&slutt=12658.589337749,6933842.480074977&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=23131.961055209278,6936838.823032396&slutt=23178.72879053885,6937309.664867436&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=36702.36624956445,6950291.6474007955&slutt=36778.50157994096,6950016.548198562&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=20853.204308743123,6939592.358717515&slutt=20638.11771304172,6939679.444927726&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=16112.167162967904,6946267.653663013&slutt=16176.453134912474,6946340.517977856&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=38792.42584442743,6946386.567167263&slutt=38946.91037624149,6946291.330794491&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true"]
+
+for k in kalibrering
+    
+end
+
 
 
 # The below takes several minutes.

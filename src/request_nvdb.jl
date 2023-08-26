@@ -97,7 +97,7 @@ function nvdb_request(url_ext::String, method::String = "GET"; body = "",
                 @error string(e.url)
                 @error string(e.error)
                 return JSON3.Object(), 0
-            elseif isa HTTP.RequestError
+            elseif e isa HTTP.RequestError
                 @error string(e.error)
                 return JSON3.Object(), 0
             else

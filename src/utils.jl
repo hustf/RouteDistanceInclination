@@ -6,21 +6,28 @@
 
 
 """
-reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
+    reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
+    ---> Vector{Bool}
 
 In-place reversing of linestrings point order for continuity. 
+
+Returns a vector where 'true' indicated that this linestring was reversed.
+This may be used for reversing associated data.
 """
 function reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
     previous_point = (easting1, northing1, 0.0)
+    reversed = Bool[]
     for i in eachindex(multi_linestring)
         current_first_point = multi_linestring[i][1]
         current_last_point = multi_linestring[i][end]
-        if is_reversed(previous_point, current_first_point, current_last_point)
+        isrev = is_reversed(previous_point, current_first_point, current_last_point)
+        if isrev
             reverse!(multi_linestring[i])
         end
+        push!(reversed, isrev)
         previous_point = multi_linestring[i][end]
     end
-    multi_linestring
+    reversed
 end
 
 function is_reversed(previous_point, current_first_point, current_last_point)
@@ -299,7 +306,7 @@ end
 
 
 """
-    (speed_limitations::Vector{Vector{Float64}}, prefixed_refs, mls)
+    modify_fartsgrense_with_speedbumps!(speed_limitations::Vector{Vector{Float64}}, prefixed_refs, mls)
 
 Instead of making a request for pretty rare speedbumps
 per small stretch of road, we make one for the kommune and ignore
@@ -353,4 +360,104 @@ function modify_fartsgrense_with_speedbumps!(speed_limitations::Vector{Vector{Fl
     end
     speed_limitations
 end
+
+
+
+"""
+    slope_at_each_coordinate(p_x, p_y, p_z)
+    slope_at_each_coordinate(p::Vector{Tuple{Float64, Float64, Float64}})
+    ---> Vector{Float64}
+
+# Example
+```
+julia> p = [(33728.644, 6.946682377e6, 31.277), (33725.9, 6.9466807e6, 31.411), (33722.49, 6.9466785e6, 31.511)]
+3-element Vector{Tuple{Float64, Float64, …}}:
+ (33728.644, 6.946682377e6, 31.277)
+ (33725.9, 6.9466807e6, 31.411)
+ (33722.49, 6.9466785e6, 31.511)
+
+ julia> slope_at_each_coordinate(p)
+ 2-element Vector{Float64}:
+ 0.04166826007770272
+ 0.024642130445827252
+```
+"""
+function slope_at_each_coordinate(p_x, p_y, p_z)
+    n = length(p_x)
+    @assert length(p_y) == n
+    p0 = [(p_x[i], p_y[i], p_z[i]) for i in 1:(n - 1)]
+    p1 = [(p_x[i], p_y[i], p_z[i]) for i in 2:n]
+    slope_between.(p0, p1)
+end
+function slope_at_each_coordinate(p::Vector{Tuple{Float64, Float64, Float64}})
+    px = map(point -> point[1], p)
+    py = map(point -> point[2], p)
+    pz = map(point -> point[3], p)
+    slope_at_each_coordinate(px, py, pz)
+end
+
+"""
+    slope_at_each_coordinate(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}})
+    ---> Vector{Float64}
+
+Slopes detailed, one per unique coordinate in the 'multi-linestring'. The last value is
+a copy of the next-to-last.
+
+Slopes are forward looking: i to i + 1.
+
+# Example
+In the example, the second linestring is not continuous with the first, but
+the horizontal distance is extreme. Hence, the slope is ~ 0.
+
+```
+julia> mls = [ [(33728.644, 6.946682377e6, 31.277), (33725.9, 6.9466807e6, 31.411), (33722.49, 6.9466785e6, 31.511)],
+[(0.0, 0.0, 0.0), (10.0, 0.0, 0.0)] ];
+
+julia> slope_at_each_coordinate(mls)
+4-element Vector{Float64}:
+ 0.04166826007770272
+ 0.024642130445827252
+ 0.0
+ 0.0
+```
+"""
+function slope_at_each_coordinate(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}})
+    s = Float64[] 
+    for p in mls
+        vs = slope_at_each_coordinate(p)
+        @assert length(vs) == length(p) - 1
+        append!(s, vs)
+    end
+    # We simply extend the slope one coordinate further, in
+    # order to have a value at the end, too.
+    append!(s, s[end])
+    s
+end
+
+
+
+"""
+slope_between(pt1, pt2)
+
+Vertical change in position / horizontal change, i.e.
+Rise / run
+
+# Example
+```
+julia> pt1 = (33725.9, 6.9466807e6, 31.411);
+
+julia> pt2 = (33722.49, 6.9466785e6, 31.511);
+
+julia> slope_between(pt1, pt2)
+0.024642130445827252
+```
+"""
+function slope_between(pt1, pt2)
+    Δx = pt2[1] - pt1[1]
+    Δy = pt2[2] - pt1[2]
+    Δz = pt2[3] - pt1[3]
+    Δz / hypot(Δx, Δy)
+end
+
+
 

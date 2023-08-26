@@ -4,7 +4,8 @@ import BSplines
 using BSplines: BSplineBasis, Spline, Derivative, Function
 import Smoothers
 using Smoothers: hma
-export nvdb_request, route_data, delete_init_file
+using Serialization
+export route_data, delete_memoization_file, nvdb_request
 "Contains patched routes"
 struct Quilt
     fromtos::Vector{Vector{Float64}} 
@@ -22,4 +23,5 @@ include("utils.jl")
 include("distance_and_progression.jl")
 include("vegdata_from_vegsystemreferanse.jl")
 include("curvature_bsplines.jl")
+include("memoization_file.jl")
 end

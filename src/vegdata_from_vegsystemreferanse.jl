@@ -1,10 +1,12 @@
 # Intermediate layer between 'endpoints' and 'exported'
 
 """
-    fartsgrense_from_prefixed_vegsystemreferanse(ref)
+    fartsgrense_from_prefixed_vegsystemreferanse(ref, is_reversed)
     --> fractional_distance_of_ref::Float64, fartsgrense1::Int, fartsgrense2::Int
 
 This interface won't work if ref has more than two speed limits.
+
+`is_reversed` is true if the output is to be applied to a reversed linestring. See calling context.
 
 # Example 1 
 
@@ -38,7 +40,7 @@ julia> catalogue["Fartsgrense"][:beskrivelse]
 "Høyeste tillatte hastighet på en vegstrekning."
 ```
 """
-function fartsgrense_from_prefixed_vegsystemreferanse(ref)
+function fartsgrense_from_prefixed_vegsystemreferanse(ref, is_reversed)
     ref_from, ref_to = extract_from_to_meter(ref)
     vegobjekttype_id = 105
     if ref_from == ref_to
@@ -50,5 +52,5 @@ function fartsgrense_from_prefixed_vegsystemreferanse(ref)
     @assert ref_from < ref_to ref # Callee must have failed to call correct_to_increasing_distance first.
     o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; 
         inkluder = "egenskaper,vegsegmenter")
-    extract_split_fartsgrense(o, ref)
+    extract_split_fartsgrense(o, ref, is_reversed)
 end

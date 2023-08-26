@@ -9,7 +9,7 @@ error message.
 """
 function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
     @assert !isempty(o)
-    # Extract just what we want. There is much more.
+    # Extract just what we want. There may be much more.
     if iszero(o.metadata.antall)
         if o.metadata.status == 4040 
             msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
@@ -40,7 +40,7 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
         r = s.vegsystemreferanse
         @assert r.vegsystem.fase == "V" # Existing. If not, improve the query.
         sref = r.kortform
-        scorr= correct_to_increasing_distance(sref)
+        scorr = correct_to_increasing_distance(sref)
         k = s.kommune
         "$k $scorr"
     end
@@ -124,10 +124,14 @@ end
 
 """
     extract_multi_linestrings(o, ea, no)
-    --> Vector{Vector{Tuple{Float64, Float64, Float64}}}
+    --> Vector{Vector{Tuple{Float64, Float64, Float64}}}, Vector{Bool}
 
-The starting point coordinates are given, so that
-we can reverse the linestrings returned from API.
+The starting point coordinates are given as input, so that
+we can reverse the linestrings returned from API where needed.
+
+The second returned vector indicates if a segment was reversed or not.
+Reversion might be applicable to related data.
+
 Each vector contains a linestring.
 Start and end points of each coincide.
 """
@@ -139,13 +143,12 @@ function extract_multi_linestrings(o, ea, no)
     end
     @assert ! isempty(multi_linestring)
     # Flip the order of points if necessary for continuity. 
-    reverse_linestrings_where_needed!(multi_linestring, ea, no)
+
+    reversed = reverse_linestrings_where_needed!(multi_linestring, ea, no)
     @assert ! isempty(multi_linestring)
     check_continuity_of_multi_linestrings(multi_linestring)
     @assert ! isempty(multi_linestring)
     # Check length with straight lines between points.
-
-    # TODO use 
     Δl_linestrings = map(length_of_linestring, multi_linestring)
     if abs(round(sum(Δl_linestrings)) - round(o.metadata.lengde)) > 4
         msg = "Trouble when checking length totals. o.metadata.lengde = $(o.metadata.lengde)\n" 
@@ -156,20 +159,22 @@ function extract_multi_linestrings(o, ea, no)
         println()
         @warn msg
     end
-    multi_linestring
+    multi_linestring, reversed
 end
 function extract_multi_linestrings(q::Quilt)
     mls = Vector{Vector{Tuple{Float64, Float64, Float64}}}()
+    reversed = Vector{Bool}()
     for (o, fromto) in zip(q.patches, q.fromtos)
         ea1, no1, _, __ = fromto
-        patchml = extract_multi_linestrings(o, ea1, no1)
+        patchml, rev = extract_multi_linestrings(o, ea1, no1)
         append!(mls, patchml)
+        append!(reversed, rev)
     end
-    mls
+    mls, reversed
 end
 
 """
-    extract_split_fartsgrense(o, ref_from, ref_to)
+    extract_split_fartsgrense(o, ref, is_reversed)
     --> () fractional_distance_of_ref, fartsgrense_start, fartsgrense_end
 
 Returns (NaN, 0, 0) when no interpretation is found.
@@ -177,8 +182,10 @@ Returns (NaN, 0, 0) when no interpretation is found.
 Called with `o` from request made within `fartsgrense_from_prefixed_vegsystemreferanse`
 
 ref is prefixed vegsystemreferanse for the request.
+
+`is_reversed` is true if the output is to be applied to a reversed linestring. See calling context.
 """
-function extract_split_fartsgrense(o, ref)
+function extract_split_fartsgrense(o, ref, is_reversed)
     ref_from, ref_to = extract_from_to_meter(ref)
     @assert hasproperty(o, :metadata) ref
     @assert hasproperty(o, :objekter) ref
@@ -210,8 +217,6 @@ function extract_split_fartsgrense(o, ref)
         @assert enhet.kortnavn == "km/h"
         fa.verdi
     end
-    if length(fartsgrenser) == 1
-    end
     strekninger = map(objekter) do ob
         @assert hasproperty(ob, :vegsegmenter) ref
         vegsegmenter = filter(ob.vegsegmenter) do s
@@ -235,9 +240,9 @@ function extract_split_fartsgrense(o, ref)
     fra_m_s = fra_meters[permutation]
     til_m_s = til_meters[permutation] # Could be used for double checking continuity
     fartsgrenser_s = fartsgrenser[permutation]
-    _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from)
+    _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from, is_reversed)
 end
-function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from)
+function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from, is_reversed)
     if length(fartsgrenser_s) == 0
         return (NaN, 0, 0)
     elseif length(fartsgrenser_s) == 1
@@ -246,9 +251,15 @@ function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, re
         if fartsgrenser_s[1] == fartsgrenser_s[2]
             return 1.0, fartsgrenser_s[1], fartsgrenser_s[1]
         else
-            split_after_ref_from = til_m_s[1]- ref_from
-            fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
-            return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[2]
+            if is_reversed
+                split_after_ref_from = til_m_s[1] - ref_from
+                fractional_distance_of_ref = 1 - split_after_ref_from / (ref_to - ref_from)
+                return fractional_distance_of_ref, fartsgrenser_s[2], fartsgrenser_s[1]
+            else
+                split_after_ref_from = til_m_s[1] - ref_from
+                fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
+                return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[2]
+            end
         end
     elseif length(fartsgrenser_s) == 3
         # Make sure two of three are equal
@@ -256,13 +267,25 @@ function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, re
             fartsgrenser_s[2] == fartsgrenser_s[3] ||
             fartsgrenser_s[1] == fartsgrenser_s[3] ref
         if fartsgrenser_s[1] == fartsgrenser_s[2]
-            split_after_ref_from = til_m_s[2]- ref_from
-            fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
-            return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[3]
+            if is_reversed
+                split_after_ref_from = til_m_s[2] - ref_from
+                fractional_distance_of_ref = 1 - split_after_ref_from / (ref_to - ref_from)
+                return fractional_distance_of_ref, fartsgrenser_s[2], fartsgrenser_s[1]
+            else
+                split_after_ref_from = til_m_s[2]- ref_from
+                fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
+                return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[3]
+            end
         else
-            split_after_ref_from = til_m_s[1]- ref_from
-            fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
-            return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[2]
+            if is_reversed
+                split_after_ref_from = til_m_s[1] - ref_from
+                fractional_distance_of_ref = 1 -split_after_ref_from / (ref_to - ref_from)
+                return fractional_distance_of_ref, fartsgrenser_s[2], fartsgrenser_s[1]
+            else
+                split_after_ref_from = til_m_s[1] - ref_from
+                fractional_distance_of_ref = split_after_ref_from / (ref_to - ref_from)
+                return fractional_distance_of_ref, fartsgrenser_s[1], fartsgrenser_s[2]
+            end
         end
     else
         throw("Unexpected length(fartsgrenser_s). Ref = $ref")
