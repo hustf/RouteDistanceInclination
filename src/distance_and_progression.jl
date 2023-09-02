@@ -29,6 +29,7 @@ function progression_at_each_coordinate(p_x, p_y, p_z)
     append!([0.0], cumsum(Δls))
 end
 function progression_at_each_coordinate(p::Vector{Tuple{Float64, Float64, Float64}})
+    throw("No longer used?")
     px = map(point -> point[1], p)
     py = map(point -> point[2], p)
     pz = map(point -> point[3], p)
@@ -54,6 +55,7 @@ julia> progression_at_each_coordinate(mls, progressions)
 ```
 """
 function progression_at_each_coordinate(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}}, progressions::Vector{Float64})
+    throw("No longer used")
     n = length(mls)
     @assert length(progressions) == n + 1
     s = Float64[] 

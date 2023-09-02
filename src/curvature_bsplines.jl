@@ -3,90 +3,86 @@
 # The aim not not to analyze curvature, but
 # to make a basis for finding speed limitations in curves.
 
-function extract_curvature_extremals_from_multi_linestrings(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}})
-    r_extremals = Float64[]
-    s_extremals = Float64[]
-    for p in mls
-        r, s = curvature_from_linestring(p)
-        push!(r_extremals, r)
-        push!(s_extremals, s)
+function progression_and_radii_of_curvature_from_multiline_string(mls, progression)
+    n = length(mls)
+    @assert length(progression) == n + 1
+    progression_detailed = Float64[]
+    radii_of_curvature = Float64[]
+    for i in 1:n
+        # Put this in a separate function??
+        # Now considering:
+        p = mls[i]
+        s0 = progression[i]     # The first is zero we expect.
+        s1 = progression[i + 1] # The first is zero we expect.
+        # s0 and s1 are the Vegsystemreferanse progressions.
+        # We' correct progression values to match these at the ends of each curve.
+        px = map(point -> point[1], p)
+        py = map(point -> point[2], p)
+        pz = map(point -> point[3], p)
+        s, r = progression_and_radii_of_segment(px, py, pz, s0, s1)
+        if i !== n
+            append!(progression_detailed,  s[1:(end - 1)])
+            append!(radii_of_curvature,  r[1:(end - 1)])
+        else
+            append!(progression_detailed,  s)
+            append!(radii_of_curvature,  r)
+        end
     end
-    r_extremals, s_extremals
+    progression_detailed, radii_of_curvature
 end
-"""
-    curvature_from__linestring(p::Vector{Tuple{Float64, Float64, Float64}})
-    curvature_from_linestring(px, py)
 
-    --> Tightest turning radius, at arc length from start of curve
 
-A linestring is a vector of (x, y, z) coordinates as per roadbuilding nomenclature.
-
-Vertical curvature is ignored in the curvature calculation,
-but vertical position is included in lengths. So this is slightly approximate.
-
-Since we need to apply some smoothing, this returns the minimum
-radius of curvature after filtering.
-"""
-function curvature_from_linestring(p::Vector{Tuple{Float64, Float64, Float64}})
-    px = map(point -> point[1], p)
-    py = map(point -> point[2], p)
-    pz = map(point -> point[3], p)
-    curvature_from_linestring(px, py, pz)
-end
-function curvature_from_linestring(p_x, p_y, p_z)
-    s = progression_at_each_coordinate(p_x, p_y, p_z)
+function progression_and_radii_of_segment(px, py, pz, s0, s1)
+    x = progression_at_each_coordinate(px, py, pz)
+    # map x[1] to s0, x[end] to s1, linearly in between.
+    s = s0 .+ ((s1 - s0) ./ (x[end] - x[1])) .* (x .- x[1])
+    # The detailed progression, s, for this part is used as breakpoints:
     b  = BSplineBasis(4, s)
-    # Values to interpolate between.
-    # Try not bothering with tangents, double up endpoints instead!
-    # We'll take values away from the ends anyway.
-    xe = vcat(p_x[1], p_x, p_x[end])
-    ye = vcat(p_y[1], p_y, p_y[end])
-    # We consider the following to be naturally parametrized curve,
-    # i.e. the argument is arc length in meters.
-    # This is not perfect, so we need to do some smoothing and testing.   
-    px = Function(Spline(b, xe), true)
-    py = Function(Spline(b, ye), true)
-    px´ = Function(Spline(b, xe), Derivative(1))
-    py´ = Function(Spline(b, ye), Derivative(1))
-    p´(s) = (px´(s), py´(s))
-    px´´ = Function(Spline(b, xe), Derivative(2))
-    py´´ = Function(Spline(b, ye), Derivative(2))
-    p´´(s) = (px´´(s), py´´(s))
-    # And voîla, the signed curvature κ is also (Kreyzig):
+    # We'll make three curves (and their derivatives). Each is padded at the end (no tangents).
+    xe = vcat(px[1], px, px[end])
+    ye = vcat(py[1], py, py[end])
+    # The smooth curves... Wrapping in Function ensures that NaN will be 
+    # returned for any parameter outside of b's 'support' or 'range', s.
+    sx´ = Function(Spline(b, xe), Derivative(1))
+    sy´ = Function(Spline(b, ye), Derivative(1))
+    sx´´ = Function(Spline(b, xe), Derivative(2))
+    sy´´ = Function(Spline(b, ye), Derivative(2))
+    # We make a small error by neglecting the vertical contribution, 
+    # but we consider it good enough for the purpose of finding comfortable
+    # driving speed in a curve. Latteral inclination matters much more, and we don't have that.
+    p´(s) = (sx´(s), sy´(s))
+    p´´(s) = (sx´´(s), sy´´(s))
+    # For naturally parametrized curves (we approximate that closely), 
+    # change in tangent direction equals the signed curvature κ (ref. Kreyzig):
     ϕ´(s) = perp_dot_product(p´(s) , p´´(s))
-    extract_smoooth_minimum_radius_of_curvature(ϕ´, s)
+    r = smooth_signed_radii(ϕ´, s)
+    s, r
 end
 
-
-"""
-    extract_smoooth_minimum_radius_of_curvature(ϕ´::Function, s::Vector)
-"""
-function extract_smoooth_minimum_radius_of_curvature(ϕ´::Function, s::Vector)
-    if length(s) < 9 # 9 - 4 = 5, minimum for filtering. 
-        # Estimating curvature from this few points would
-        # be quite inaccurate. Better to drop it.
-        # CONSIDER Revisit with thorough testing?
-        return NaN, NaN
+function smooth_signed_radii(ϕ´, s)
+    # Shy away from dubious ends of splines. Derivatives don't mean much there. 
+    drop_pts = 2
+    if length(s) < 5
+        return NaN .* s
     end
-    # Shy away from dubious ends. This is four points.
-    ss = s[3:(end - 2)]
+    ss = s[1 + drop_pts:(end - drop_pts)]
     κs = map(ϕ´, ss)
-    # Henderson moving average, nn = 17 seems to work get rid of most of the noise.
-    nκ = length(κs)
-    nfi = min(17, iseven(nκ) ?  nκ - 1 : nκ)
-    κsm = hma(κs, nfi)
-    # The largest smoothed curvature is
-    κ_max, i_max = findmax(abs.(κsm))
-    @assert ! iszero(κ_max)
-    # The smallest radius of curvature is
-    r_extreme = 1 / κ_max
-    # The arc length position for the tightest curve is
-    s_extreme = ss[i_max]
-    # Tightest radius, at arc length from start
-    r_extreme, s_extreme
+    if length(s) < 9 # 9 - 4 = 5, minimum for filtering.
+        r_unfiltered = 1 ./ κs
+        return vcat(repeat([NaN], drop_pts), r_unfiltered,  repeat([NaN], drop_pts))
+    end
+    κsm = smooth_coordinate(κs)
+    # We keep the sign of curvature. Hence, curving to the left is positive, to right is negative.
+    # Smooth signed radii:
+    rsm = 1 ./ κsm
+    # Radii larger than 500 m are not interesting to our purposes. Cut off with NaN.
+    rcu = map(r -> abs(r) <= 500 ? r : NaN,  rsm)
+    # Pad the ends with NaNs
+    r = vcat(repeat([NaN], drop_pts), rcu,  repeat([NaN], drop_pts))
+    @assert length(r) == length(s)
+    r
 end
-# p = [(28683.912, 6.945112857e6, 83.498), (28678.9, 6.9451121e6, 83.214), (28673.4, 6.9451116e6, 82.814), (28667.1, 6.945111e6, 82.414), (28660.811, 6.9451106e6, 81.914), (28654.811, 6.9451103e6, 81.514), (28648.4, 6.9451102e6, 81.114), (28642.311, 6.9451102e6, 80.714), (28636.6, 6.9451103e6, 80.214), (28630.699, 6.9451103e6, 79.914), (28624.99, 6.9451105e6, 79.414), (28616.1, 6.9451108e6, 78.914), (28609.6, 6.9451112e6, 78.414), (28603.6, 6.9451118e6, 78.014), (28597.311, 6.9451124e6, 77.714), (28591.311, 6.9451131e6, 77.414), (28584.99, 6.945114e6, 77.014), (28578.811, 6.9451149e6, 76.714), (28572.811, 6.945116e6, 76.314), (28565.311, 
-# 6.9451175e6, 75.914), (28559.99, 6.9451187e6, 75.614), (28554.199, 6.94512e6, 75.314), (28549.199, 6.9451214e6, 75.114), (28543.699, 6.9451228e6, 74.814), (28538.311, 6.9451243e6, 74.614), (28532.311, 6.9451261e6, 74.314), (28526.811, 6.9451278e6, 74.014), (28520.9, 6.9451298e6, 73.814), (28512.35, 6.945133e6, 73.464)]
+
 
 """
     perp_dot_product(a1, a2, b1, b2)
@@ -96,3 +92,51 @@ end
 """
 perp_dot_product(a1, a2, b1, b2) = a1 * b2 - a2 * b1
 perp_dot_product(p´, p´´) = perp_dot_product(p´[1], p´[2], p´´[1], p´´[2])
+
+"""
+    smooth_slope_from_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}}, progression_detailed)
+    ---> Vector{Float64}
+"""
+function smooth_slope_from_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}}, progression_detailed)
+    _, _, z = unique_unnested_coordinates_of_multiline_string(mls)
+    smooth_slope(z, progression_detailed)
+end
+
+
+"""
+    smooth_slope(z::T, progression_detailed::T) where T<: Vector{Float64}
+    ---> Vector{Float64}
+
+This assumes z is low-resolution measurement, not really noisy measurement.
+This gives very spiky changes.
+progression_detailed is assumed to be directly useable.   
+"""
+function smooth_slope(z::T, progression_detailed::T) where T<: Vector{Float64}
+    x = progression_detailed
+    zsm = smooth_coordinate(z)
+    # Pad ends
+    xp = vcat(x[1], x, x[end])
+    zp = vcat(zsm[1], zsm, zsm[end])
+    b  = BSplineBasis(4, x)
+    fz´ = Function(Spline(b, zp), Derivative(1))
+    z´ = map(fz´, x)
+    # With this method, we most likely get reasonable end of range values
+    # by copying the next to last value.
+    z´[1] = z´[2]
+    z´[end - 1] = z´[end - 2]
+    z´[end] = z´[end - 1]
+    z´
+end
+
+"""
+    smooth_coordinate(rough::Vector{Float64}; max_filter_length = 17)
+    ---> Vector{Float64}
+
+Henderson moving average.
+"""
+function smooth_coordinate(rough::Vector{Float64}; max_filter_length = 17)
+    @assert ! iseven(max_filter_length)
+    n = length(rough)
+    nfi = min(max_filter_length, iseven(n) ?  n - 1 : n)
+    hma(rough, nfi)
+end

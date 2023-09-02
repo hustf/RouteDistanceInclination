@@ -1,10 +1,5 @@
 # Small functions used elsewhere
 
-
-
-
-
-
 """
     reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
     ---> Vector{Bool}
@@ -361,6 +356,45 @@ function modify_fartsgrense_with_speedbumps!(speed_limitations::Vector{Vector{Fl
     speed_limitations
 end
 
+"""
+    unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
+    ---> Vector{Float64}, Vector{Float64}, Vector{Float64}
+
+We're joining curves where two ends are identical
+(we don't check that though)
+"""
+function unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
+    vx = Float64[] 
+    vy = Float64[] 
+    vz = Float64[] 
+    for i in 1:length(mls)
+        p = mls[i]
+        px = map(point -> point[1], p)
+        py = map(point -> point[2], p)
+        pz = map(point -> point[3], p)
+        if i == 1
+            append!(vx, px)
+            append!(vy, py)
+            append!(vz, pz)
+        else
+            append!(vx, px[2:end])
+            append!(vy, py[2:end])
+            append!(vz, pz[2:end])
+        end
+    end
+    vx, vy, vz
+end
+
+
+
+
+
+
+
+
+
+
+
 
 
 """
@@ -383,6 +417,7 @@ julia> p = [(33728.644, 6.946682377e6, 31.277), (33725.9, 6.9466807e6, 31.411), 
 ```
 """
 function slope_at_each_coordinate(p_x, p_y, p_z)
+    throw("Delete me too")
     n = length(p_x)
     @assert length(p_y) == n
     p0 = [(p_x[i], p_y[i], p_z[i]) for i in 1:(n - 1)]
@@ -390,6 +425,7 @@ function slope_at_each_coordinate(p_x, p_y, p_z)
     slope_between.(p0, p1)
 end
 function slope_at_each_coordinate(p::Vector{Tuple{Float64, Float64, Float64}})
+    throw("Delete me")
     px = map(point -> point[1], p)
     py = map(point -> point[2], p)
     pz = map(point -> point[3], p)
@@ -422,6 +458,7 @@ julia> slope_at_each_coordinate(mls)
 ```
 """
 function slope_at_each_coordinate(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}})
+    throw("No good")
     s = Float64[] 
     for p in mls
         vs = slope_at_each_coordinate(p)
@@ -453,6 +490,7 @@ julia> slope_between(pt1, pt2)
 ```
 """
 function slope_between(pt1, pt2)
+    throw("delete me")
     Δx = pt2[1] - pt1[1]
     Δy = pt2[2] - pt1[2]
     Δz = pt2[3] - pt1[3]

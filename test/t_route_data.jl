@@ -4,13 +4,12 @@ using RouteSlopeDistance: patched_post_beta_vegnett_rute,
     extract_prefixed_vegsystemreferanse,
     extract_length,
     extract_multi_linestrings,
-    extract_multi_linestrings,
-    extract_curvature_extremals_from_multi_linestrings,
     fartsgrense_from_prefixed_vegsystemreferanse,
     fartsgrense_at_intervals,
     modify_fartsgrense_with_speedbumps!,
-    interval_progression_pairs,
-    progression_at_each_coordinate,
+    slope_at_each_coordinate,
+    link_split_key,
+    progression_and_radii_of_curvature_from_multiline_string,
     slope_at_each_coordinate
 using JSON3: pretty
 
@@ -41,24 +40,27 @@ easting1, northing1, easting2, northing2 = ea1, no1, ea2, no2
 progression = append!([0.0], cumsum(lengths))
 
 # 0.000389 seconds (608 allocations: 76.211 KiB)
-@time mls = extract_multi_linestrings(q);
+@time mls, reversed = extract_multi_linestrings(q);
 
 @test length(progression) == length(mls) + 1
 
-#0.000032 seconds (147 allocations: 28.391 KiB)
-@time progression_detailed= progression_at_each_coordinate(mls, progression)
+# 0.000280 seconds (1.96 k allocations: 181.469 KiB)
+@time  progression_detailed, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression)
 
 @test issorted(progression_detailed)
+@test length(r) == length(progression_detailed)
+slope = slope_at_each_coordinate(mls)
+@test length(slope)  == length(progression_detailed)
+
+
 
 # length(refs) == 13 in this typical case
 # 0.000182 seconds (817 allocations: 59.422 KiB)
-@time r_extremals, s_extremals_local = extract_curvature_extremals_from_multi_linestrings(mls)
-s_extremals = s_extremals_local .+ progression[1:(end - 1)]
+#@time r_extremals, s_extremals_local = extract_curvature_extremals_from_multi_linestrings(mls)
+#s_extremals = s_extremals_local .+ progression[1:(end - 1)]
 
-# 5.897437 seconds (46.52 k allocations: 3.515 MiB, 0.60% compilation time)
-@time fartsgrense_tuples = map(refs) do ref
-    fartsgrense_from_prefixed_vegsystemreferanse(ref)
-end
+#   8.807276 seconds (13.95 k allocations: 1.346 MiB)
+@time fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
 
 #  0.000038 seconds (121 allocations: 13.375 KiB)
 @time speed_limitations_nested = fartsgrense_at_intervals(fartsgrense_tuples, mls)
@@ -69,7 +71,7 @@ end
 
 # Unpack nested speed limitations.
 speed_limitations_detailed = vcat(speed_limitations_nested...)
-@test length(detailed_progression) == length(speed_limitations_detailed) + 1
+@test length(progression_detailed) == length(speed_limitations_detailed) + 1
 
 a_centripetal_max = 1.2
 v_centripetal_max = sqrt.(a_centripetal_max .* r_extremals) * 3.6
@@ -84,7 +86,7 @@ for (s, v_c) in zip(s_extremals, v_centripetal_max)
 end
 
 # 0.000021 seconds (15 allocations: 1.188 KiB)
-@time slope_detailed = slope_at_each_coordinate(mls)
+@time slope = slope_at_each_coordinate(mls)
 
 
 #########################
@@ -94,7 +96,7 @@ end
 kalibrering = ["https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=23593.713839066448,6942485.5900078565&slutt=23771.052968726202,6942714.9388697725&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=10929.721370896965,6932488.729146618&slutt=10906.172339663783,6932221.839157347&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=38744.875253753446,6946346.347827989&slutt=38856.09116223373,6946141.295902717&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
-"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=17218.3379226189,6933105.362498406&slutt=17411.16742345906,6933361.249064187&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
+"https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=17233.49,6933166.44&slutt=17411.16742345906,6933361.249064187&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=19888.753066316945,6944574.509461373&slutt=20264.900856445194,6944368.952139658&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=26521.552530414192,6940216.455383167&slutt=26457.440704222478,6940123.788953421&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=26343.660416060884,6950023.898755312&slutt=26736.355686723255,6950277.5537265055&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
@@ -107,9 +109,48 @@ kalibrering = ["https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=16112.167162967904,6946267.653663013&slutt=16176.453134912474,6946340.517977856&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=38792.42584442743,6946386.567167263&slutt=38946.91037624149,6946291.330794491&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&trafikantgruppe=K&pretty=true&kortform=true"]
 
-for k in kalibrering
-    
-end
+s = kalibrering[4]
+args = split(split(s, '?')[2], '&')
+start = split(args[1], '=')[2]
+slutt = split(args[2], '=')[2]
+stea, stno = split(start, ',')
+slea, slno = split(slutt, ',')
+ea1 = Int(round(tryparse(Float64, stea)))
+no1 = Int(round(tryparse(Float64, stno)))
+ea2 = Int(round(tryparse(Float64, slea)))
+no2 = Int(round(tryparse(Float64, slno)))
+easting1, northing1, easting2, northing2 = ea1, no1, ea2, no2
+key = link_split_key(easting1, northing1, easting2, northing2)
+q = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
+refs = extract_prefixed_vegsystemreferanse(q)
+lengths = extract_length(q)
+progression = append!([0.0], cumsum(lengths))
+mls, reversed = extract_multi_linestrings(q)
+progression_detailed, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression)
+#progression_detailed = progression_at_each---_coordinate(mls, progression)
+# TODO but what about when there are several fartsgrenser? What då?
+# TODO send progression_detailed as argument
+# TODO drop 'reversed' argument to r. Why is it needed at all?
+# TODO drop p_z from curvature_from_linestring. Not used, confusing.
+
+#r_extremals, s_extremals_local = extract_curvature_extremals_from_multi_linestrings(mls, reversed)
+s_extremals = s_extremals_local .+ progression[1:(end - 1)]
+
+fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
+speed_limitations_nested = fartsgrense_at_intervals(fartsgrense_tuples, mls)
+modify_fartsgrense_with_speedbumps!(speed_limitations_nested, refs, mls)
+speed_limitations_detailed = vcat(speed_limitations_nested...)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
