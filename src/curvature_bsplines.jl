@@ -3,32 +3,32 @@
 # The aim not not to analyze curvature, but
 # to make a basis for finding speed limitations in curves.
 
-function progression_and_radii_of_curvature_from_multiline_string(mls, progression)
+function progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
     n = length(mls)
-    @assert length(progression) == n + 1
-    progression_detailed = Float64[]
+    @assert length(progression_at_ends) == n + 1
+    progression = Float64[]
     radii_of_curvature = Float64[]
     for i in 1:n
         # Put this in a separate function??
         # Now considering:
         p = mls[i]
-        s0 = progression[i]     # The first is zero we expect.
-        s1 = progression[i + 1] # The first is zero we expect.
+        s0 = progression_at_ends[i]     # The first is zero we expect.
+        s1 = progression_at_ends[i + 1] # The first is zero we expect.
         # s0 and s1 are the Vegsystemreferanse progressions.
-        # We' correct progression values to match these at the ends of each curve.
+        # We' correct progression_at_ends values to match these at the ends of each curve.
         px = map(point -> point[1], p)
         py = map(point -> point[2], p)
         pz = map(point -> point[3], p)
         s, r = progression_and_radii_of_segment(px, py, pz, s0, s1)
         if i !== n
-            append!(progression_detailed,  s[1:(end - 1)])
+            append!(progression,  s[1:(end - 1)])
             append!(radii_of_curvature,  r[1:(end - 1)])
         else
-            append!(progression_detailed,  s)
+            append!(progression,  s)
             append!(radii_of_curvature,  r)
         end
     end
-    progression_detailed, radii_of_curvature
+    progression, radii_of_curvature
 end
 
 
@@ -94,25 +94,25 @@ perp_dot_product(a1, a2, b1, b2) = a1 * b2 - a2 * b1
 perp_dot_product(p´, p´´) = perp_dot_product(p´[1], p´[2], p´´[1], p´´[2])
 
 """
-    smooth_slope_from_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}}, progression_detailed)
+    smooth_slope_from_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}}, progression)
     ---> Vector{Float64}
 """
-function smooth_slope_from_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}}, progression_detailed)
+function smooth_slope_from_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}}, progression)
     _, _, z = unique_unnested_coordinates_of_multiline_string(mls)
-    smooth_slope(z, progression_detailed)
+    smooth_slope(z, progression)
 end
 
 
 """
-    smooth_slope(z::T, progression_detailed::T) where T<: Vector{Float64}
+    smooth_slope(z::T, progression::T) where T<: Vector{Float64}
     ---> Vector{Float64}
 
 This assumes z is low-resolution measurement, not really noisy measurement.
 This gives very spiky changes.
-progression_detailed is assumed to be directly useable.   
+progression is assumed to be directly useable.   
 """
-function smooth_slope(z::T, progression_detailed::T) where T<: Vector{Float64}
-    x = progression_detailed
+function smooth_slope(z::T, progression::T) where T<: Vector{Float64}
+    x = progression
     zsm = smooth_coordinate(z)
     # Pad ends
     xp = vcat(x[1], x, x[end])

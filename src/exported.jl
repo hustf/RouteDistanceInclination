@@ -1,18 +1,30 @@
 """
     route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Int
+    route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
     route_data(;start = "", slutt = ""; default_fartsgrense = 50)
     route_data(s::String; default_fartsgrense = 50)
 
     --> Dict{Any}
 
-Arguments are start and end points given in UTM33 coordinates.
+Arguments are start and end points given in UTM33 coordinates. Arguments are converted to integers.
+
 Results are memoized and stored to disk. Results are stored after rounding 
-arguments to whole numbers, i.e. a resolution of 1 m.
+input arguments to whole numbers, i.e. at a resolution of 1 m.
 
 For easy copy / paste from map applications, 's' can be any string containing url-style arguments
 'start' and 'slutt'.
 
-default_fartsgrense is used in case the starting point has no defined speed limit, e.g. in bus terminals.
+`default_fartsgrense`` is used in case the starting point has no defined speed limit, e.g. in bus terminals.
+
+
+# Output notes
+
+`slope` is horizontal progression / vertical progression. Positive is uphill.
+'radius of curvature' is signed. The vertical component of curves are ignored, but may slightly affect the result. See test example.
+`speed limitation` include a reduction from speed humps of 15 km/t at those points.
+'key' is included for backward reference, and can be reused as input argument.
+
+
 
 # Example
 
@@ -31,12 +43,15 @@ julia> route_data(;start = "23593.713839066448,6942485.5900078565", slutt = "237
 julia> route_data(23594,6942486, 23771,6942715);
 Curvature limited velocity: 32.46935208780521 km/h at 109.79520214324043 m due to radius 67.78927629898796
 Route data (23594 6942486)-(23771 6942715) stored in C:\\Users\\f\\RouteSlopeDistance.jls
-Dict{Symbol, Vector} with 5 entries:
-  :slope              => [0.0200961, 0.0125534, 0.0028205, 0.00851354, 0.0114698, -0.00179656, 0.…
-  :multi_linestring            => [[(23594.2, 6.94249e6, 10.483), (23594.1, 6.94249e6, 10.507), (23593.1, …
+Dict{Symbol, Any} with 7 entries:
+  :radius_of_curvature         => [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN  …  170.586, 145.066, 131.182, 123.6, 119.802, 118.416, 120.765, 120.486, NaN, NaN] 
+  :multi_linestring            => [[(23594.2, 6.94249e6, 10.483), (23594.1, 6.94249e6, 10.507), (23593.1, 6.9425e6, 10.657), (23592.9, 6.9425e6, 10.667), (23591.7, 6.9…
   :prefixed_vegsystemreferanse => ["1516 FV5884 S1D1 m6860-7196"]
-  :progression_detailed        => [0.0, 1.1945, 13.1444, 16.6898, 28.4363, 32.7958, 44.4849, 49.8823, 63.0…
-  :speed_limitations_detailed  => [80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0  …  80.0, 80…
+  :key                         => "(23594 6942486)-(23771 6942715)"
+  :progression                 => [0.0, 1.1945, 13.1443, 16.6898, 28.4362, 32.7958, 44.4848, 49.8823, 63.0743, 68.2845  …  282.645, 290.253, 299.265, 302.855, 309.522,…
+  :speed_limitation            => [80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0  …  80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0, 80.0]
+  :slope                       => [0.0094845, 0.0094845, 0.00677416, 0.00667992, 0.00712934, 0.00740014, 0.00844093, 0.00884124, 0.0103206, 0.0105568  …  -0.0116806, -…
+
 ```
 """
 function route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Int
@@ -56,21 +71,21 @@ function route_data(easting1::T, northing1::T, easting2::T, northing2::T; defaul
     lengths = extract_length(q)
     # Progression at start of first segment, start of second ... end of last.
     # This counts from zero at closest road point to (easting1, northing1)
-    progression = append!([0.0], cumsum(lengths))
+    progression_at_ends = append!([0.0], cumsum(lengths))
     # 3d points, nested. Some were received in the opposite direction of our request,
     # then reversed. 
     mls, reversed = extract_multi_linestrings(q)
-    @assert length(progression) == length(mls) + 1
+    @assert length(progression_at_ends) == length(mls) + 1
     @assert length(mls) == length(reversed)
     # Use bsplines to find signed radius of curvature.
     # Curve ends and extreme large radii get value NaN (Not A Number)
     # Also match lengths between coordinates with the authoritative
     # progression at start and end of each curve.
-    progression_detailed, radius_of_curvature = progression_and_radii_of_curvature_from_multiline_string(mls, progression)
-    @assert issorted(progression_detailed)
-    @assert length(radius_of_curvature) == length(progression_detailed)
+    progression, radius_of_curvature = progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
+    @assert issorted(progression)
+    @assert length(radius_of_curvature) == length(progression)
     # Finally detail slope also. 
-    slope = smooth_slope_from_multiline_string(mls, progression_detailed)
+    slope = smooth_slope_from_multiline_string(mls, progression)
 
     # We have unpacked the useful information from the first request.
     # Now ask for related information, and unpack it.    
@@ -85,48 +100,35 @@ function route_data(easting1::T, northing1::T, easting2::T, northing2::T; defaul
     # 
     # Detail fartsgrense on every point of each multi_linestring. We'll 
     # unpack further below.
-    speed_limitations_nested = fartsgrense_at_intervals(fartsgrense_tuples, mls)
+    speed_lims_in_intervals = speed_nested_in_intervals(fartsgrense_tuples, mls)
     # Practical speed limit is reduced by speedbumps.
     # Make further requests for speedbumps and reduce
     # the speeed limit at each bump's coordinates. In-place function.
-    modify_fartsgrense_with_speedbumps!(speed_limitations_nested, refs, mls)
+    modify_fartsgrense_with_speedbumps!(speed_lims_in_intervals, refs, mls)
     # 
     # Unpack nested speed limitations.
-    speed_limitations_detailed = vcat(speed_limitations_nested...)
-    @assert length(progression_detailed) == length(speed_limitations_detailed) + 1
-
-    # This is about other things than the route's properties.
-    # We're moving this out of here. 
-    #
-    # Another practical speed limit is for passenger comfort.
-    # Acceptable centripetal acceleration is calibrated against 
-    # Ecosafe logs over ~30000 km.
-    #a_centripetal_max = 3.215 # m/s²
-    # For every minimum radius, find the maximum velocity.
-    # a = v² / r      =>  v = √(a·r)
-    #v_centripetal_max = sqrt.(a_centripetal_max .* r_extremals) * 3.6 # km / h
-    # Apply the speed limitations due to curvature
-    #for (s, v_c, r) in zip(s_extremals, v_centripetal_max, r_extremals) 
-    #    if ! isnan(s)
-    #        i = findfirst(t -> t >= s, progression_detailed)
-    #        if speed_limitations_detailed[i] > v_c
-    #            println("Curvature limited velocity: $v_c km/h at $s m due to radius $r ")
-    #            speed_limitations_detailed[i] = v_c
-    #        end
-    #    end
-    #end
+    speed_limitation = vcat(speed_lims_in_intervals..., speed_lims_in_intervals[end][end])
+    @assert length(progression) == length(speed_limitation) 
 
     # Sum up
     thisdata = Dict(:prefixed_vegsystemreferanse => refs,
-        :progression_detailed => progression_detailed,
-        :speed_limitations_detailed => speed_limitations_detailed,
+        :progression => progression,
+        :speed_limitation => speed_limitation,
         :slope => slope,
         :multi_linestring => mls,
         :key => key,
         :radius_of_curvature => radius_of_curvature,
-        :s_extremals => s_extremals)
+        :progression_at_ends => progression_at_ends,
+        :fartsgrense_tuples => fartsgrense_tuples)
     # Store results on disk.
     set_memoized_value(key, thisdata)
+end
+function route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
+    ea1 = Int(round(easting1))
+    no1 = Int(round(northing1))
+    ea2 = Int(round(easting2))
+    no2 = Int(round(northing2))
+    route_data(ea1, no1, ea2, no2; default_fartsgrense)
 end
 function route_data(;start = "", slutt = "", default_fartsgrense = 50)
     stea, stno = split(start, ',')

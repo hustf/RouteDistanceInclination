@@ -37,10 +37,14 @@ Do a, rather slow lookup and potential replacement from the .ini file.
 """
 function corrected_coordinates(ingoing::Bool, easting, northing)
     key = coordinate_key(ingoing::Bool, easting, northing)
-    value = get_config_value("coordinates replacement", key, Tuple{Float64, Float64}, nothing_if_not_found = true)
+    value = get_config_value("coordinates replacement", key, Tuple{Int64, Int64}, nothing_if_not_found = true)
     if isnothing(value)
         easting, northing
     else
+        print("\nCorrected coordinates ")
+        printstyled(rpad(key, 16), color = :yellow)
+        print(" => ")
+        printstyled("$(rpad(value, 16))\n", color = :green)
         value
     end
 end
@@ -69,10 +73,17 @@ where `x, y` is from the config file.
 function sequential_patched_positions(ea1, no1, ea2, no2)
     sequence = Vector{Vector{Float64}}()
     key = link_split_key(ea1, no1, ea2, no2)
-    value = get_config_value("link split", key, Tuple{Float64, Float64}, nothing_if_not_found = true)
+    value = get_config_value("link split", key, Tuple{Int64, Int64}, nothing_if_not_found = true)
     if ! isnothing(value)
-        push!(sequence, [ea1, no1, value...])
-        push!(sequence, [value..., ea2, no2])
+        split1 = [ea1, no1, value...]
+        push!(sequence, split1)
+        split2 = [value..., ea2, no2]
+        push!(sequence, split2)
+        print("\nLink split patch ")
+        printstyled(rpad(key, 32), color = :yellow)
+        print(" => ")
+        printstyled("$(rpad(split1, 32))\n", color = :green)
+        printstyled(repeat(' ', 53) * "$(rpad(key, 32))\n", color = :green)
     else
         push!(sequence, [ea1, no1, ea2, no2])
     end

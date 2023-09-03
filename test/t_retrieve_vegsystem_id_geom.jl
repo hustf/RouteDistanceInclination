@@ -1,6 +1,6 @@
 using Test
 using RouteSlopeDistance
-using RouteSlopeDistance: LOGSTATE, length_of_linestring
+using RouteSlopeDistance: LOGSTATE, interval_progression_pairs
 import HTTP
 using JSON3: pretty
 # We don't need to print our 
@@ -31,7 +31,6 @@ o = nvdb_request(url_ext, "POST"; body)[1]
 l_straight = sqrt((easting2 - easting1)^2 +(northing2 - northing1)^2)
 @test o.metadata.lengde > l_straight
 @test abs(l_straight / o.metadata.lengde - 1) < 0.01
-o.geometri
 
 # We need to make several requests in order to get e.g. 'fartsgrense'. 
 # Let's grab the vegsystemreferanses. 
@@ -125,15 +124,15 @@ multi_linestring = map(o.vegnettsrutesegmenter) do s
         NTuple{3, Float64}(tryparse.(Float64, split(strip(v), ' ')))
     end
 end
+@test length(multi_linestring) == 1
 ls = multi_linestring[1]
-l3d = length_of_linestring(ls)
-l2d = length_of_projected_linestring(ls)
-@test round(l3d; digits = 3) == o.metadata.lengde
-@test round(l2d; digits = 3) < o.metadata.lengde
-@test ls[1][1] == 25468.054
+
+xx, yy = interval_progression_pairs(ls)
+l3d =  round(yy[end]; digits = 3)
+@test l3d == o.metadata.lengde
 @test o.vegnettsrutesegmenter[1].geometri.srid == 5973
 
-# Try to get higher precision geometri TODO
+# Try to get higher precision geometri 
 body = Dict([
     :typeveg                => "kanalisertVeg,enkelBilveg,rampe,rundkjøring,gangOgSykkelveg"
     :konnekteringslenker    => true

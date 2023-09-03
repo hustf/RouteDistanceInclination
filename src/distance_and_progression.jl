@@ -1,10 +1,9 @@
 # This file concerns length, distance and progression from coordinate sets.
-# Also see `extract_length(o)` in 'extract_from_response_objects'.
 
 """
     progression_at_each_coordinate(p_x, p_y, p_z)
-    progression_at_each_coordinate(p::Vector{Tuple{Float64, Float64, Float64}})
-    ---> Vector{Float64}
+
+Used as an intermediatory step. The result is later scaled to fit the authoritative total length.
 
 # Example
 ```
@@ -28,81 +27,8 @@ function progression_at_each_coordinate(p_x, p_y, p_z)
     Δls = distance_between.(p0, p1)
     append!([0.0], cumsum(Δls))
 end
-function progression_at_each_coordinate(p::Vector{Tuple{Float64, Float64, Float64}})
-    throw("No longer used?")
-    px = map(point -> point[1], p)
-    py = map(point -> point[2], p)
-    pz = map(point -> point[3], p)
-    progression_at_each_coordinate(px, py, pz)
-end
-"""
-    progression_at_each_coordinate(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}}, progressions::Vector{Float64})
-    ---> Vector{Float64}
-
-Distances detailed, one per unique coordinate in the 'multi-linestring'.
-
-So as not to deviate from official measurements too much, length along the path 
-is 'recalibrated' at the end of each segment, values taken from 'progression'.
-
-# Example
-```
-julia> mls = [ [(33728.644, 6.946682377e6, 31.277), (33725.9, 6.9466807e6, 31.411), (33722.49, 6.9466785e6, 31.511)],
-[(0.0, 0.0, 0.0), (10.0, 0.0, 0.0)] ];
-
-julia> progressions = [0.0, 7.277990185233618, 17.27799018523361];
-
-julia> progression_at_each_coordinate(mls, progressions)
-```
-"""
-function progression_at_each_coordinate(mls::Vector{Vector{Tuple{Float64, Float64, Float64}}}, progressions::Vector{Float64})
-    throw("No longer used")
-    n = length(mls)
-    @assert length(progressions) == n + 1
-    s = Float64[] 
-    for i in 1:n
-        # Now considering:
-        p = mls[i]
-        s0 = progressions[i]
-        # 1d-positions along p, starting at s0
-        vs = progression_at_each_coordinate(p) .+ s0
-        @assert length(vs) == length(p)
-        if i == 1
-            append!(s, vs)
-        else
-            # We're joining two curves where two ends are identical
-            append!(s, vs[2:end])
-        end
-    end
-    s
-end
 
 
-
-
-
-
-
-"""
-    length_of_linestring(ls::Vector{Tuple{Float64, Float64, Float64}})
-    --> Float64
-
-Assuming straight lines between points
-
-# Example
-```
-julia> p = [(33728.644, 6.946682377e6, 31.277), (33725.9, 6.9466807e6, 31.411), (33722.49, 6.9466785e6, 31.511)]
-3-element Vector{Tuple{Float64, Float64, …}}:
- (33728.644, 6.946682377e6, 31.277)
- (33725.9, 6.9466807e6, 31.411)
- (33722.49, 6.9466785e6, 31.511)
-
- julia> length_of_linestring(p)
-7.277990185233618
-```
-"""
-function length_of_linestring(ls::Vector{Tuple{Float64, Float64, Float64}})
-    progression_at_each_coordinate(ls)[end]
-end
 
 """
 distance_between(pt1, pt2)
@@ -130,11 +56,6 @@ function distance_between(pt1::T, pt2::T) where T<:Tuple{Float64, Float64}
     Δy = pt2[2] - pt1[2]
     hypot(Δx, Δy)
 end
-
-
-
-
-
 
 
 """
@@ -184,8 +105,8 @@ julia> unitless_interval_progression_pairs(ml)
 """
 function unitless_interval_progression_pairs(ml)
     s_at_start_of_interval, s_at_end_of_interval = interval_progression_pairs(ml)
-    l = s_at_end_of_interval[end]
-    s_ul_at_start_of_interval = s_at_end_of_interval ./ l
+    l = s_at_end_of_interval[end] - s_at_start_of_interval[1]
+    s_ul_at_start_of_interval = s_at_start_of_interval ./ l
     s_ul_at_end_of_interval = s_at_end_of_interval ./ l 
     return s_ul_at_start_of_interval, s_ul_at_end_of_interval 
 end

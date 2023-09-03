@@ -13,8 +13,8 @@ This interface won't work if ref has more than two speed limits.
 Constant speed limit
 
 ```
-julia> fartsgrense_from_prefixed_vegsystemreferanse("1516 FV61 S5D1 m1085-1273")
-(1.0, 60, 60
+julia> fartsgrense_from_prefixed_vegsystemreferanse("1516 FV61 S5D1 m1085-1273", false)
+(1.0, 60, 60)
 ```
 
 # Example 2
@@ -22,11 +22,14 @@ julia> fartsgrense_from_prefixed_vegsystemreferanse("1516 FV61 S5D1 m1085-1273")
 Shifting speed limit
 
 ```
-julia> fractional_distance_of_ref, fartsgrense1, fartsgrense = fartsgrense_from_prefixed_vegsystemreferanse("1515 FV61 S5D1 m1527-1589")
-(0.1086935483870973, 80, 60)
+julia> fractional_distance_of_ref, fartsgrense1, fartsgrense = fartsgrense_from_prefixed_vegsystemreferanse("1515 FV61 S5D1 m1527-1589", false)
+(0.1086935483870973, 60, 80)
 
 julia> change_at_meter = 1527 + fractional_distance_of_ref * (1589-1527)
 1533.739
+
+julia> fractional_distance_of_ref, fartsgrense1, fartsgrense = fartsgrense_from_prefixed_vegsystemreferanse("1515 FV61 S5D1 m1527-1589", true)
+(0.8913064516129027, 80, 60)
 ```
 
 

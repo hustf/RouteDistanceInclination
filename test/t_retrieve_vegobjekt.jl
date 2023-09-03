@@ -50,7 +50,7 @@ sub_o = nvdb_request(url)[1]
 egenskaper = filter(e->e.navn == "Fartsgrense", sub_o.egenskaper)
 @test length(egenskaper) == 1
 egenskap = egenskaper[1]
-@test egenskap.enhet == "Kilometer/time"
+@test egenskap.enhet.navn == "Kilometer/time"
 @test egenskap.verdi == 60
 
 
@@ -72,9 +72,12 @@ fartsgrense = fartsgrenser[1]
 @test fartsgrense.verdi == 60
 
 # Try to use the defined function
-@test fartsgrense_from_prefixed_vegsystemreferanse(refs[1]) == (1.0, 60, 60)
-@test fartsgrense_from_prefixed_vegsystemreferanse(refs[end]) == (1.0, 80, 80)
-@test fartsgrense_from_prefixed_vegsystemreferanse.(refs) isa Vector{Tuple{Float64, Int64, Int64}}
+@test fartsgrense_from_prefixed_vegsystemreferanse(refs[1], false) == (1.0, 60, 60)
+@test fartsgrense_from_prefixed_vegsystemreferanse(refs[end], false) == (1.0, 80, 80)
+@test fartsgrense_from_prefixed_vegsystemreferanse.(refs, false) isa Vector{Tuple{Float64, Int64, Int64}}
+@test fartsgrense_from_prefixed_vegsystemreferanse(refs[6], false) == (0.1086935483870973, 60, 80)
+@test fartsgrense_from_prefixed_vegsystemreferanse(refs[6], true) == (0.8913064516129027, 80, 60)
+
 
 # Step up the difficulty
 
@@ -103,7 +106,7 @@ o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenska
 @test hasproperty(o, :objekter)
 @test length(o) == 2
 vegsegmenter1 = o.objekter[1].vegsegmenter;
-@test length(vegsegmenter1) == 1 ref
+@test length(vegsegmenter1) == 1
 @test hasproperty(o.objekter[2], :vegsegmenter)
 vegsegmenter2 = o.objekter[2].vegsegmenter
 @test length(vegsegmenter2) == 3
@@ -150,26 +153,28 @@ vs = o.objekter[1].vegsegmenter;
 
 # Tests on a higher level
 ref = refs[9]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (0.2545454545454545, 50, 60)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (0.2545454545454545, 50, 60)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, true) == (0.7454545454545455, 60, 50)
 ref = refs[5]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 50, 50)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, true) == (1.0, 50, 50)
 ref = refs[1]
-@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref)[1])
+@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref, false)[1])
 ref = refs[16]
-@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref)[1])
+@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref, false)[1])
 ref = refs[17]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 70, 70) 
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 70, 70) 
 ref = refs[14]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (0.8471042084168335, 70, 60)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (0.8471042084168335, 70, 60)
 ref = refs[15]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 60, 60)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 60, 60)
 ref = refs[6]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 50, 50)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
 ref = refs[8]
-@test fartsgrense_from_prefixed_vegsystemreferanse(ref) == (1.0, 50, 50)
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
 
 
-@test fartsgrense_from_prefixed_vegsystemreferanse.(refs) isa Vector{Tuple{Float64, Int64, Int64}} 
+@test fartsgrense_from_prefixed_vegsystemreferanse.(refs, false) isa Vector{Tuple{Float64, Int64, Int64}} 
 
 
 

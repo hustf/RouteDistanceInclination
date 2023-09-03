@@ -10,7 +10,7 @@ M = ["Hareid bussterminal" 36975.94566374121 6.947658805705906e6; "Hareid ungdom
 start = 1
 na1, ea1, no1 = M[start, :]
 key = coordinate_key(false, ea1, no1)
-get_config_value("coordinates replacement", key, Tuple{Float64, Float64}; nothing_if_not_found = true)
+get_config_value("coordinates replacement", key, Tuple{Int64, Int64}; nothing_if_not_found = true)
 @test corrected_coordinates(false, ea1, no1) !== (ea1, no1)
 
 # Test a non-defined single point replacement
@@ -66,7 +66,7 @@ key = link_split_key(ea1, no1, ea2, no2)
 insertpos = get_config_value("link split", key, Tuple{Float64, Float64}, nothing_if_not_found = true)
 @test isnothing(insertpos)
 key = coordinate_key(true, ea2, no2)
-replaced_pos = get_config_value("coordinates replacement", key, Tuple{Float64, Float64}; nothing_if_not_found = true)
+replaced_pos = get_config_value("coordinates replacement", key, Tuple{Int64, Int64}; nothing_if_not_found = true)
 @test ! isnothing(replaced_pos)
 @test corrected_coordinates(true, ea2, no2) !== (ea2, no2)
 q =  patched_post_beta_vegnett_rute(ea1, no1, ea2, no2)
@@ -83,7 +83,7 @@ key = link_split_key(ea1, no1, ea2, no2)
 insertpos = get_config_value("link split", key, Tuple{Float64, Float64}, nothing_if_not_found = true)
 @test ! isnothing(insertpos)
 key = coordinate_key(true, ea2, no2)
-replaced_pos = get_config_value("coordinates replacement", key, Tuple{Float64, Float64}; nothing_if_not_found = true)
+replaced_pos = get_config_value("coordinates replacement", key, Tuple{Int64, Int64}; nothing_if_not_found = true)
 @test ! isnothing(replaced_pos)
 @test corrected_coordinates(true, ea2, no2) !== (ea2, no2)
 # Now, this does not use the corrected coordinate at Garnes.

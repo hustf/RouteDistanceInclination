@@ -5,12 +5,11 @@ using RouteSlopeDistance: patched_post_beta_vegnett_rute,
     extract_length,
     extract_multi_linestrings,
     fartsgrense_from_prefixed_vegsystemreferanse,
-    fartsgrense_at_intervals,
+    speed_nested_in_intervals, 
     modify_fartsgrense_with_speedbumps!,
-    slope_at_each_coordinate,
     link_split_key,
     progression_and_radii_of_curvature_from_multiline_string,
-    slope_at_each_coordinate
+    smooth_slope_from_multiline_string
 using JSON3: pretty
 
 
@@ -37,62 +36,56 @@ easting1, northing1, easting2, northing2 = ea1, no1, ea2, no2
 @time lengths = extract_length(q);
 
 #   0.000010 seconds (3 allocations: 352 bytes)
-progression = append!([0.0], cumsum(lengths))
+progression_at_ends = append!([0.0], cumsum(lengths))
 
 # 0.000389 seconds (608 allocations: 76.211 KiB)
 @time mls, reversed = extract_multi_linestrings(q);
 
-@test length(progression) == length(mls) + 1
+@test length(progression_at_ends) == length(mls) + 1
 
 # 0.000280 seconds (1.96 k allocations: 181.469 KiB)
-@time  progression_detailed, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression)
+@time  progression, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
 
-@test issorted(progression_detailed)
-@test length(r) == length(progression_detailed)
-slope = slope_at_each_coordinate(mls)
-@test length(slope)  == length(progression_detailed)
+@test issorted(progression)
+@test length(r) == length(progression)
+slope = smooth_slope_from_multiline_string(mls, progression)
+@test length(slope)  == length(progression)
 
-
-
-# length(refs) == 13 in this typical case
-# 0.000182 seconds (817 allocations: 59.422 KiB)
-#@time r_extremals, s_extremals_local = extract_curvature_extremals_from_multi_linestrings(mls)
-#s_extremals = s_extremals_local .+ progression[1:(end - 1)]
 
 #   8.807276 seconds (13.95 k allocations: 1.346 MiB)
 @time fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
 
-#  0.000038 seconds (121 allocations: 13.375 KiB)
-@time speed_limitations_nested = fartsgrense_at_intervals(fartsgrense_tuples, mls)
-
-# 1.197382 seconds (2.33 k allocations: 234.508 KiB)
-@time modify_fartsgrense_with_speedbumps!(speed_limitations_nested, refs, mls)
-
-
-# Unpack nested speed limitations.
-speed_limitations_detailed = vcat(speed_limitations_nested...)
-@test length(progression_detailed) == length(speed_limitations_detailed) + 1
-
-a_centripetal_max = 1.2
-v_centripetal_max = sqrt.(a_centripetal_max .* r_extremals) * 3.6
-for (s, v_c) in zip(s_extremals, v_centripetal_max) 
-    if ! isnan(s)
-        i = findfirst(t -> t >= s, progression_detailed)
-        if speed_limitations_detailed[i] >= v_c
-            println("Curvature limited velocity: $v_c km/h at $s m")
-            speed_limitations_detailed[i] = v_c
-        end
-    end
+if isnan(fartsgrense_tuples[1][1])
+    fartsgrense_tuples[1] = (1.0, 50, 50)
 end
 
-# 0.000021 seconds (15 allocations: 1.188 KiB)
-@time slope = slope_at_each_coordinate(mls)
+#  0.000038 seconds (121 allocations: 13.375 KiB)
+@time speed_lims_in_intervals = speed_nested_in_intervals(fartsgrense_tuples, mls)
+
+# 1.197382 seconds (2.33 k allocations: 234.508 KiB)
+@time modify_fartsgrense_with_speedbumps!(speed_lims_in_intervals, refs, mls)
+
+
+# Unpack nested speed limitations. Apply at first coordinate of each interval (there is one more coordinate than intervals)
+speed_limitation = vcat(speed_lims_in_intervals..., speed_lims_in_intervals[end][end])
+@test length(progression) == length(speed_limitation) 
+
+
+# Test 'overlapping' speed limit segments where we exit or enter a road:
+ea1 = 38751
+no1 = 6946371
+no2 = 6946328
+ea2 = 38786
+d = route_data(ea1, no1, ea2, no2)
+@test all(d[:speed_limitation] .== 40.0)
 
 
 #########################
 # Curvature - speed tests
+# # This is moved out of package
+#
 #########################
-
+#=
 kalibrering = ["https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=23593.713839066448,6942485.5900078565&slutt=23771.052968726202,6942714.9388697725&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=10929.721370896965,6932488.729146618&slutt=10906.172339663783,6932221.839157347&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
 "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=38744.875253753446,6946346.347827989&slutt=38856.09116223373,6946141.295902717&maks_avstand=10&omkrets=100&konnekteringslenker=true&detaljerte_lenker=false&behold_trafikantgruppe=false&pretty=true&kortform=true",
@@ -124,44 +117,115 @@ key = link_split_key(easting1, northing1, easting2, northing2)
 q = patched_post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
 refs = extract_prefixed_vegsystemreferanse(q)
 lengths = extract_length(q)
-progression = append!([0.0], cumsum(lengths))
+progression_at_ends = append!([0.0], cumsum(lengths))
 mls, reversed = extract_multi_linestrings(q)
-progression_detailed, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression)
-#progression_detailed = progression_at_each---_coordinate(mls, progression)
-# TODO but what about when there are several fartsgrenser? What då?
-# TODO send progression_detailed as argument
-# TODO drop 'reversed' argument to r. Why is it needed at all?
-# TODO drop p_z from curvature_from_linestring. Not used, confusing.
+progression, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
 
-#r_extremals, s_extremals_local = extract_curvature_extremals_from_multi_linestrings(mls, reversed)
-s_extremals = s_extremals_local .+ progression[1:(end - 1)]
 
 fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
-speed_limitations_nested = fartsgrense_at_intervals(fartsgrense_tuples, mls)
+speed_limitations_nested = speed_nested_in_intervals(fartsgrense_tuples, mls)
 modify_fartsgrense_with_speedbumps!(speed_limitations_nested, refs, mls)
-speed_limitations_detailed = vcat(speed_limitations_nested...)
+speed_limitation = vcat(speed_limitations_nested...)
+=#
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# The below takes several minutes.
+# The below takes several minutes, and serializes these request for faster run next time.
+# Call `delete_memoization_file` to start over.
 rws = 1:(size(M)[1])
 for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
-    println()
     na1, ea1, no1 = M[start, :]
     na2, ea2, no2 = M[stop, :]
-    println(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
-    refs, lengths, mls, fart_mls = route_data(ea1, no1, ea2, no2)
-    display(sum(lengths))
-    println()
+    print("\n", lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+    println(link_split_key(ea1, no1, ea2, no2))
+    d = route_data(ea1, no1, ea2, no2)
+    println("   Progression end: ", d[:progression][end])
 end 
+
+#############
+# Spot checks
+#############
+using Plots
+function niceplot(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
+    p = plot(layout = (2, 1), size = (1200, 800), thickness_scaling = 2, framestyle=:origin, legend = false)
+    plot!(p[1], s, slope)
+    title!(p[1], "Slope [-]")
+    plot!(p[2], s, speed_limitation)
+    title!(p[2], "Speed limit [km/h]")
+    for i in 1:(length(refs) - 1)
+        xs = progression_at_ends[i]
+        ref = "$i:" * refs[i][5:end]
+        j = findfirst(x -> x > xs, s )
+        y = speed_limitation[j]
+        annotate!(p[2], [(xs,y,text(ref, 6, :left, :top, :blue, rotation = -30))])
+    end
+    annotate!(p[1], [(0, 0, text(na1, 8, :left, :top, :green, rotation = -30))])
+    annotate!(p[1], [(s[end], maximum(slope), text(na2, 8, :left, :top, :green, rotation = -90))])
+    p
+end
+function niceplot(d::Dict, na1, na2)
+    speed_limitation = d[:speed_limitation]
+    s = d[:progression]
+    slope = d[:slope]
+    refs = d[:prefixed_vegsystemreferanse]
+    progression_at_ends = d[:progression_at_ends]
+    niceplot(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
+end
+
+start, stop = 44, 45
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_data(ea1, no1, ea2, no2)
+niceplot(d, na1, na2)
+
+
+# Here, the speed limit is 60 at the end, because we do not
+# currently read speed limits at 'sideanlegg'. 
+# The previous plot starts at 50 because it can assume the default applies.
+# Consider fixing 'is_segment_relevant!
+start, stop = 45, 44
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_data(ea1, no1, ea2, no2)
+niceplot(d, na1, na2)
+
+
+# This works fine
+start, stop = 25, 26
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_data(ea1, no1, ea2, no2)
+niceplot(d, na1, na2)
+# The oposite order would suffer from the same issue.
+
+
+
+
+# This works poorly for slope due to long distance between geometry points. 
+# TODO: make slope function do some checks so
+# it works better in these cases.
+# Also consider that large distance between points is not beneficial to
+# solving a vehicle's diffeq with fixed step size. Another solution might be to fill in missing values
+# when progress jumps are detected.
+na1 = "Eika"
+ea1 = 28130
+no1 = 6934881
+na2 = "Nær midt tunnell"
+ea2 = 27804
+no2 = 6932152
+print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_data(ea1, no1, ea2, no2)
+niceplot(d, na1, na2)
+s = d[:progression]
+slope = d[:slope]
+mls = d[  :multi_linestring]
+_, _, z = RouteSlopeDistance.unique_unnested_coordinates_of_multiline_string(mls)
+p = plot(layout = (2, 1), size = (1200, 800), thickness_scaling = 2, framestyle=:origin, legend = false)
+plot!(p[1], s, slope, marker = true)
+plot!(p[2], s, z, marker = true)

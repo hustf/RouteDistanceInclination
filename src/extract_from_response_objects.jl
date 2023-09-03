@@ -146,19 +146,8 @@ function extract_multi_linestrings(o, ea, no)
 
     reversed = reverse_linestrings_where_needed!(multi_linestring, ea, no)
     @assert ! isempty(multi_linestring)
-    check_continuity_of_multi_linestrings(multi_linestring)
+    check_continuity_of_multi_linestring(multi_linestring)
     @assert ! isempty(multi_linestring)
-    # Check length with straight lines between points.
-    #Δl_linestrings = map(length_of_linestring, multi_linestring)
-    #if abs(round(sum(Δl_linestrings)) - round(o.metadata.lengde)) > 4
-    #    msg = "Trouble when checking length totals. o.metadata.lengde = $(o.metadata.lengde)\n" 
-    #    msg *= "\t\t\tsum(Δl_linestrings) - o.metadata.lengde =  $(sum(Δl_linestrings) - o.metadata.lengde)\n"
-    #    for (i, ref) in enumerate(vegsystemreferanse_prefixed)
-    #        msg *= "\t$ref     Δl_linestrings[$i] = $(Δl_linestrings[i])\n"
-    #    end
-    #    println()
-    #    @warn msg
-    #end
     multi_linestring, reversed
 end
 function extract_multi_linestrings(q::Quilt)

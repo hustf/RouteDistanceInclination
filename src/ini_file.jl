@@ -33,7 +33,6 @@ function _prepare_init_file_configuration(io)
     # Ulstein vgs. -> Støylesvingen
     set(conta, "link split", "(28961 6945248)-(28275 6945289)", "28684 6945112")
     # Botnen -> Garneskrysset. Merk at Garneskrysset etterpå blir erstattet av ny koordinat.
-    # Utskrift fra test kan derfor ikke brukes direkte.
     set(conta, "link split", "(26807 6941534)-(26449 6940130)", "26141 6941016")
     # Myrvåglomma -> Myrvåg
     set(conta, "link split", "(23911 6938921)-(23412 6939348)", "23732 6938944")
@@ -47,13 +46,14 @@ function _prepare_init_file_configuration(io)
     #########################
     # Merk at "In to" og "Out of" ikke gir alltid gir nok mening.
     # Ulsteinvik skysstasjon         Error: 4042  IKKE_FUNNET_SLUTTPUNKT 
-    set(conta, "coordinates replacement", "In to 27262 6945774", "27265.47 6945717.35")
-    set(conta, "coordinates replacement", "Out of 27262 6945774", "27223.99 6945781.04")
+    set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
+    set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
     # Garneskrysset 
-    set(conta, "coordinates replacement", "In to 26449 6940130", "26537.51 6940226.53")
+    set(conta, "coordinates replacement", "In to 26449 6940130", "26453 6940120")
+    set(conta, "coordinates replacement", "Out of 26449 6940130", "26453 6940120")
     # Fosnavåg terminal
-    set(conta, "coordinates replacement", "In to 16064 6947515", "16047.98 6947536.24")
-    set(conta, "coordinates replacement", "Out of 16064 6947515", "16074.87 6947499.33")
+    set(conta, "coordinates replacement", "In to 16064 6947515", "16048 6947536")
+    set(conta, "coordinates replacement", "Out of 16064 6947515", "16075 6947499")
     # Hareid bussterminal
     set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
     set(conta, "coordinates replacement", "In to 36976 6947659", "36990 6947639")
@@ -110,6 +110,13 @@ function get_config_value(sect, key, ::Type{Tuple{Float64, Float64}}; nothing_if
     isnothing(st) && return nothing
     (tryparse(Float64, split(st, ' ')[1]),     tryparse(Float64, split(st, ' ')[2]))
 end 
+function get_config_value(sect, key, ::Type{Tuple{Int64, Int64}}; nothing_if_not_found = false)
+    st = get_config_value(sect, key; nothing_if_not_found)
+    isnothing(st) && return nothing
+    (tryparse(Int64, split(st, ' ')[1]),     tryparse(Int64, split(st, ' ')[2]))
+end 
+
+
 
 "delete_init_file()"
 function delete_init_file()
