@@ -213,9 +213,17 @@ function extract_split_fartsgrense(o, ref, is_reversed)
         end
         @assert length(vegsegmenter) == 1 ref
         @assert hasproperty(vegsegmenter[1], :vegsystemreferanse) ref
-        vegsystemreferanse = vegsegmenter[1].vegsystemreferanse
-        @assert hasproperty(vegsystemreferanse, :strekning) ref
-        vegsystemreferanse.strekning
+        vsr = vegsegmenter[1].vegsystemreferanse
+        @assert hasproperty(vsr, :strekning) ref
+        if hasproperty(vsr.strekning, :fra_meter)
+            vsr.strekning
+        elseif hasproperty(vsr, :kryssystem)
+            vsr.kryssystem
+        elseif hasproperty(vsr, :sideanlegg)
+            vsr.sideanlegg
+        else
+            throw("unknown error, we should have filtered out this. $ref")
+        end
     end
     fra_meters = map(strekninger) do s
         @assert hasproperty(s, :fra_meter) 

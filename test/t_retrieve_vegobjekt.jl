@@ -2,7 +2,8 @@ using Test
 using RouteSlopeDistance
 using RouteSlopeDistance: LOGSTATE, nvdb_request, get_vegobjekter__vegobjekttypeid_,
     fartsgrense_from_prefixed_vegsystemreferanse, is_segment_relevant, extract_from_to_meter,
-    extract_strekning_delstrekning, extract_prefixed_vegsystemreferanse
+    extract_strekning_delstrekning, extract_prefixed_vegsystemreferanse,
+    extract_kategori_fase_nummer, extract_at_meter
 import HTTP
 using JSON3: pretty
 
@@ -99,9 +100,12 @@ refs =  ["1517 FV61 S3D1 m86 KD1 m9-13"
        "1516 FV61 S3D30 m1136-1136"
        "1516 FV61 S4D1 m2608-2659"
        "1515 FV654 S1D1 m0-6"
+       "1515 FV5876 S1D1 m82 SD1 m9-29"
+       "1516 FV61 S4D1 m5398 SD2 m85-104"
        ]
 ref = refs[9]
-ref_from, ref_to = extract_from_to_meter(ref)
+@test extract_from_to_meter(ref) == (370, 425)
+@test extract_kategori_fase_nummer(ref) == "FV61"
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
 @test hasproperty(o, :objekter)
 @test length(o) == 2
@@ -118,8 +122,10 @@ vs = [vegsegmenter1[1], vegsegmenter2[1], vegsegmenter2[2], vegsegmenter2[3]]
 @test ! is_segment_relevant(ref, vs[3]) 
 @test is_segment_relevant(ref, vs[4]) 
 
+
 ref = refs[6]
-ref_from, ref_to = extract_from_to_meter(ref)
+@test extract_from_to_meter(ref) == (143,161)
+@test extract_kategori_fase_nummer(ref) == "FV61"
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
 vs = o.objekter[1].vegsegmenter;
 @test ! is_segment_relevant(ref, vs[1])
@@ -128,17 +134,19 @@ vs = o.objekter[1].vegsegmenter;
 
 
 ref = refs[8]
-ref_from, ref_to = extract_from_to_meter(ref)
+@test extract_from_to_meter(ref) == (270, 370)
+@test extract_kategori_fase_nummer(ref) == "FV61"
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
 vs = o.objekter[1].vegsegmenter;
 @test ! is_segment_relevant(ref, vs[1])
 @test is_segment_relevant(ref, vs[2])
 @test ! is_segment_relevant(ref, vs[3])
 
+
 ref = refs[18]
-ref_from, ref_to = extract_from_to_meter(ref)
+@test extract_from_to_meter(ref) == (0, 6)
+@test extract_kategori_fase_nummer(ref) == "FV654"
 @test extract_strekning_delstrekning(ref) == "S1D1"
-@test extract_strekning_delstrekning("FV654 S1D1 m0-6") == "S1D1"
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
 vs = o.objekter[1].vegsegmenter;
 @test length(vs) == 7
@@ -151,6 +159,64 @@ vs = o.objekter[1].vegsegmenter;
 @test ! is_segment_relevant(ref, vs[7])
 
 
+# 'Krysssystem' 
+ref = refs[1]
+@test extract_from_to_meter(ref) == (9, 13)
+@test extract_kategori_fase_nummer(ref) == "FV61"
+@test extract_strekning_delstrekning(ref) == "S3D1"
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test length(vs) == 1
+@test is_segment_relevant(ref, vs[1])
+
+# 'Sideanlegg' 
+ref = refs[19]
+@test extract_from_to_meter(ref) == (9, 29)
+@test extract_kategori_fase_nummer(ref) == "FV5876"
+@test extract_strekning_delstrekning(ref) == "S1D1"
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test length(vs) == 2
+@test ! is_segment_relevant(ref, vs[1])
+@test is_segment_relevant(ref, vs[2])
+
+ref = refs[5]
+@test extract_from_to_meter(ref) == (86, 143)
+@test extract_kategori_fase_nummer(ref) == "FV61"
+@test extract_strekning_delstrekning(ref) == "S3D1"
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test length(vs) == 3
+@test is_segment_relevant(ref, vs[1])
+@test ! is_segment_relevant(ref, vs[2])
+@test ! is_segment_relevant(ref, vs[3])
+
+
+ref = refs[20]
+@test extract_from_to_meter(ref) == (85, 104)
+@test extract_kategori_fase_nummer(ref) == "FV61"
+@test extract_strekning_delstrekning(ref) == "S4D1"
+o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ref; inkluder = "egenskaper,vegsegmenter")
+vs = o.objekter[1].vegsegmenter;
+@test length(vs) == 10
+@test ! is_segment_relevant(ref, vs[1])
+@test ! is_segment_relevant(ref, vs[2])
+@test ! is_segment_relevant(ref, vs[3])
+@test  is_segment_relevant(ref, vs[4])
+@test ! is_segment_relevant(ref, vs[5])
+@test ! is_segment_relevant(ref, vs[6])
+@test ! is_segment_relevant(ref, vs[7])
+@test ! is_segment_relevant(ref, vs[8])
+@test ! is_segment_relevant(ref, vs[9])
+@test ! is_segment_relevant(ref, vs[10])
+
+
+
+
+
+
+
+
 # Tests on a higher level
 ref = refs[9]
 @test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (0.2545454545454545, 50, 60)
@@ -159,7 +225,7 @@ ref = refs[5]
 @test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
 @test fartsgrense_from_prefixed_vegsystemreferanse(ref, true) == (1.0, 50, 50)
 ref = refs[1]
-@test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref, false)[1])
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
 ref = refs[16]
 @test isnan(fartsgrense_from_prefixed_vegsystemreferanse(ref, false)[1])
 ref = refs[17]
@@ -172,7 +238,8 @@ ref = refs[6]
 @test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
 ref = refs[8]
 @test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
-
+ref = refs[20]
+@test fartsgrense_from_prefixed_vegsystemreferanse(ref, false) == (1.0, 50, 50)
 
 @test fartsgrense_from_prefixed_vegsystemreferanse.(refs, false) isa Vector{Tuple{Float64, Int64, Int64}} 
 
@@ -188,8 +255,6 @@ o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = 
 @test o.objekter[1].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D1 m3593"
 @test o.objekter[2].vegsegmenter[1].vegsystemreferanse.kortform == "FV61 S3D1 m3398"
 
-catalogue["Fartsdemper"][:id]
-vegobjekttype_id = 103
 kommune = "1516"
 o = get_vegobjekter__vegobjekttypeid_(vegobjekttype_id, ""; kommune, inkluder = "vegsegmenter,egenskaper")
 @test o.metadata.antall == 5

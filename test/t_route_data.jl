@@ -145,30 +145,43 @@ end
 # Spot checks
 #############
 using Plots
-function niceplot(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
+# TODO: Vertical dashed line at start and ends.
+# Maybe add text at the midpoint of a strekning.
+#old_xticks = xticks(plt[1]) # grab xticks of the 1st subplot
+#new_xticks = ([5, 8], ["\$\\bar \\delta\$", "\$\\bar \\gamma\$"])
+#vline!(new_xticks[1])
+#keep_indices = findall(x -> all(x .≠ new_xticks[1]), old_xticks[1])
+#merged_xticks = (old_xticks[1][keep_indices] ∪ new_xticks[1], old_xticks[2][keep_indices] ∪ new_xticks[2])
+#xticks!(merged_xticks)
+function plot_speed_and_slope_vs_progression(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
     p = plot(layout = (2, 1), size = (1200, 800), thickness_scaling = 2, framestyle=:origin, legend = false)
     plot!(p[1], s, slope)
-    title!(p[1], "Slope [-]")
+    title!(p[1], "Slope [-] - Progression [m]")
+    title!(p[2], "Speed limit [km/h]- Progression [m]")
     plot!(p[2], s, speed_limitation)
-    title!(p[2], "Speed limit [km/h]")
+    vline!(p[2], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
+    vline!(p[1], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
     for i in 1:(length(refs) - 1)
-        xs = progression_at_ends[i]
+        xs = (progression_at_ends[i] + progression_at_ends[i + 1]) / 2
         ref = "$i:" * refs[i][5:end]
         j = findfirst(x -> x > xs, s )
         y = speed_limitation[j]
-        annotate!(p[2], [(xs,y,text(ref, 6, :left, :top, :blue, rotation = -30))])
+        t = text(ref, 6, :center, :top, :blue, rotation = -30)
+        annotate!(p[2], [(xs, y, t)])
     end
-    annotate!(p[1], [(0, 0, text(na1, 8, :left, :top, :green, rotation = -30))])
-    annotate!(p[1], [(s[end], maximum(slope), text(na2, 8, :left, :top, :green, rotation = -90))])
+    t1 = text(na1, 8, :left, :bottom, :green, rotation = -90)
+    annotate!(p[1], [(0, maximum(slope), t1)])
+    t2 = text(na2, 8, :left, :top, :green, rotation = -90)
+    annotate!(p[1], [(s[end], maximum(slope), t2)])
     p
 end
-function niceplot(d::Dict, na1, na2)
+function plot_speed_and_slope_vs_progression(d::Dict, na1, na2)
     speed_limitation = d[:speed_limitation]
     s = d[:progression]
     slope = d[:slope]
     refs = d[:prefixed_vegsystemreferanse]
     progression_at_ends = d[:progression_at_ends]
-    niceplot(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
+    plot_speed_and_slope_vs_progression(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
 end
 
 start, stop = 44, 45
@@ -177,20 +190,17 @@ na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-niceplot(d, na1, na2)
+plot_speed_and_slope_vs_progression(d, na1, na2)
 
 
-# Here, the speed limit is 60 at the end, because we do not
-# currently read speed limits at 'sideanlegg'. 
-# The previous plot starts at 50 because it can assume the default applies.
-# Consider fixing 'is_segment_relevant!
+# Reverse, which requires reading speed limits from a sideanlegg.
 start, stop = 45, 44
 na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-niceplot(d, na1, na2)
+plot_speed_and_slope_vs_progression(d, na1, na2)
 
 
 # This works fine
@@ -200,7 +210,7 @@ na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-niceplot(d, na1, na2)
+plot_speed_and_slope_vs_progression(d, na1, na2)
 # The oposite order would suffer from the same issue.
 
 
@@ -221,11 +231,14 @@ no2 = 6932152
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-niceplot(d, na1, na2)
+plot_speed_and_slope_vs_progression(d, na1, na2)
 s = d[:progression]
-slope = d[:slope]
 mls = d[  :multi_linestring]
 _, _, z = RouteSlopeDistance.unique_unnested_coordinates_of_multiline_string(mls)
+slope = d[:slope]
 p = plot(layout = (2, 1), size = (1200, 800), thickness_scaling = 2, framestyle=:origin, legend = false)
 plot!(p[1], s, slope, marker = true)
 plot!(p[2], s, z, marker = true)
+progression_at_ends = d[:progression_at_ends]
+vline!(p[2], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
+vline!(p[1], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))

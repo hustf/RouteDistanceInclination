@@ -121,51 +121,143 @@ function build_query_string(xs::Vararg{String,N} where N)
 end
 
 """
-    extract_from_to_meter(vegsystemreferanse::String)
+    extract_from_to_meter(ref::String)
+    ---> Tuple{Int, Int}
 
-Assumes ending like: 1515 FV61 S5D1 m1401-1412
+# Example
+```
+julia> extract_from_to_meter("1517 FV61 S3D1 m86 KD1 m9-13")
+(9, 13)
+
+julia> extract_from_to_meter("1517 FV61 S3D1 m86-143")
+(86, 143)
+
+julia> extract_from_to_meter("FV61 S3D1 m86-143")
+(86, 143)
+```
 """
-function extract_from_to_meter(vegsystemreferanse::String)
-    from_to = split(vegsystemreferanse, ' ')[end]
-    @assert startswith(from_to, 'm') vegsystemreferanse
+function extract_from_to_meter(ref::String)
+    from_to = split(ref, ' ')[end]
+    @assert startswith(from_to, 'm') ref
     Tuple(tryparse.(Int, split(from_to[2:end], '-')))
 end
 
 """
-    extract_strekning_delstrekning(vegsystemreferanse::String)
+    extract_at_meter(ref::String)
+    ---> Float64 (can be Not a Number)
 
-Assumes ending like: 1515 FV61 S5D1 m1401-1412
+# Example
+```
+julia> extract_at_meter("1517 FV61 S3D1 m86 KD1 m9-13")
+86.0
+
+julia> extract_at_meter("1517 FV61 S3D1 m86-143")
+NaN```
 """
-function extract_strekning_delstrekning(vegsystemreferanse::String)
-    excluding_position = split(vegsystemreferanse, ' ')[1:(end - 1)]
-    String(excluding_position[end])
+function extract_at_meter(ref::String)
+    if ! isnumeric(ref[1])
+        throw(ArgumentError("Vegsystemreferanse not prefixed with kommune no.: $ref"))
+    end
+    s = split(ref, ' ')[4]
+    @assert s[1] == 'm'
+    val = tryparse(Float64, String(s[2:end]))
+    if isnothing(val)
+        NaN
+    else
+        val
+    end
+end
+
+
+"""
+    extract_sideanleggsdel(ref::String)
+    ---> Float64 (can be Not a Number)
+
+# Example
+```
+julia> extract_sideanleggsdel("1516 FV61 S4D1 m5398 SD2 m85-104")
+2.0
+
+```
+"""
+function extract_sideanleggsdel(ref::String)
+    if ! isnumeric(ref[1])
+        throw(ArgumentError("Vegsystemreferanse not prefixed with kommune no.: $ref"))
+    end
+    sp = split(ref, ' ')
+    if length(sp) < 5
+        return NaN
+    end
+    s = sp[5]
+    @assert length(s) >= 3 ref
+    @assert s[1:2] == "SD"
+    val = tryparse(Float64, String(s[3:end]))
+    if isnothing(val)
+        NaN
+    else
+        val
+    end
+end
+
+
+
+"""
+    extract_strekning_delstrekning(ref::String)
+    ---> String
+
+# Example
+```
+julia> extract_strekning_delstrekning("1517 FV61 S3D1 m86 KD1 m9-13")
+S3D1
+
+julia> extract_sideanleggsdel("1517 FV61 S3D1 m86-143")
+NaN
+```
+"""
+function extract_strekning_delstrekning(ref::String)
+    if ! isnumeric(ref[1])
+        throw(ArgumentError("Vegsystemreferanse not prefixed with kommune no.: $ref"))
+    end
+    s = split(ref, ' ')[3]
+    @assert ! isnumeric(s[1]) ref
+    String(s)
 end
 
 """
-    extract_kategori_fase_nummer(vegsystemreferanse::String)
+    extract_kategori_fase_nummer("1517 FV61 S3D1 m86 KD1 m9-13")
+    ---> String
 
-
-Assumes ending like: 1515 FV61 S5D1 m1401-1412
+# Example
+```
+julia> extract_kategori_fase_nummer("1517 FV61 S3D1 m86 KD1 m9-13")
+FV61
+```
 """
-function extract_kategori_fase_nummer(vegsystemreferanse::String)
-    excluding_position_and_strekning = split(vegsystemreferanse, ' ')[1:(end - 2)]
-    String(excluding_position_and_strekning[end])
+function extract_kategori_fase_nummer(ref::String)
+    if ! isnumeric(ref[1])
+        throw(ArgumentError("Vegsystemreferanse not prefixed with kommune no.: $ref"))
+    end
+    s = split(ref, ' ')[2]
+    @assert ! isnumeric(s[1]) ref
+    String(s)
 end
 
+
+
 """
-    correct_to_increasing_distance(vegsystemreferanse::String)
+    correct_to_increasing_distance(ref::String)
 
 Some requests to post_beta_vegnett_rute return invalid 
 vegsystemreferanse. The highest meter value comes first.
 
 This corrects the error by swapping the last two numbers.
 """
-function correct_to_increasing_distance(vegsystemreferanse::String)
-    ref_from, ref_to = extract_from_to_meter(vegsystemreferanse)
+function correct_to_increasing_distance(ref::String)
+    ref_from, ref_to = extract_from_to_meter(ref)
     if ref_from <= ref_to 
-        return vegsystemreferanse
+        return ref
     else
-        v = split(vegsystemreferanse, ' ')
+        v = split(ref, ' ')
         to = Int(round(ref_from))
         from = Int(round(ref_to))
         return join(v[1:(end - 1)], ' ') * " m$from-$to"
@@ -187,33 +279,71 @@ function is_segment_relevant(ref, vegsegment::JSON3.Object)
     ref_from, ref_to = extract_from_to_meter(ref)
     ref_strekning_delstrekning = extract_strekning_delstrekning(ref)
     ref_kfv = extract_kategori_fase_nummer(ref)
-    if hasproperty(vegsegment, :vegsystemreferanse)
-        vegsystemreferanse = vegsegment.vegsystemreferanse
-        if hasproperty(vegsystemreferanse, :kortform)
-            kortform = vegsystemreferanse.kortform
-            strekning_delstrekning = extract_strekning_delstrekning(kortform)
-            if ref_strekning_delstrekning !== strekning_delstrekning
-                return false
+    if ! hasproperty(vegsegment, :vegsystemreferanse)
+        throw(ArgumentError("Can't check if vegsegment without vegsystemreferanse is contained in $ref"))
+    end
+    vsr = vegsegment.vegsystemreferanse
+    if ! hasproperty(vsr, :strekning)
+        throw(ArgumentError("Can't check if vegsystemreferanse without strekning is contained in $ref"))
+    end
+    stre = vsr.strekning
+    if ! hasproperty(stre, :delstrekning)
+        throw(ArgumentError("Can't check if strekning without delstrekning is contained in $ref"))
+    end
+    if ! hasproperty(stre, :strekning)
+        throw(ArgumentError("Can't check if strekning without property strekning is contained in $ref"))
+    end
+    if ! hasproperty(vsr, :vegsystem)
+        throw(ArgumentError("Can't check if vegsystemreferanse without vegsystem is contained in $ref"))
+    end
+    syst = vsr.vegsystem
+    if ! hasproperty(syst, :vegkategori) || ! hasproperty(syst, :fase) || ! hasproperty(syst, :nummer)
+        throw(ArgumentError("Can't check if vegsystem without vegkategori, fase or nummer is contained in $ref"))
+    end
+    strekning_delstrekning = "S$(stre.strekning)D$(stre.delstrekning)"
+    if ref_strekning_delstrekning !== strekning_delstrekning
+        return false
+    end
+    kfv = syst.vegkategori * syst.fase * "$(syst.nummer)"
+    if ref_kfv !== kfv
+        return false
+    end
+    if hasproperty(stre, :fra_meter) && hasproperty(stre, :til_meter)
+        if stre.fra_meter <= ref_to
+            if stre.til_meter >= ref_from
+                if stre.til_meter - ref_from >= 1
+                    if ref_to - stre.fra_meter >= 1
+                        return true
+                    end
+                end
             end
-            kfv = extract_kategori_fase_nummer(kortform)
-            if ref_kfv !== kfv
-                return false
-            end
-        else
-            throw(ArgumentError("Why not? $ref"))
         end
-        if hasproperty(vegsystemreferanse, :strekning)
-            strekning = vegsystemreferanse.strekning
-            if hasproperty(strekning, :fra_meter)
-                fra_meter = strekning.fra_meter
-                if fra_meter <= ref_to
-                    if hasproperty(strekning, :til_meter)
-                        til_meter = strekning.til_meter
-                        if til_meter >= ref_from
-                            if til_meter - ref_from >= 1
-                                if ref_to - fra_meter >= 1
-                                    return true
-                                end
+    else
+        if ! hasproperty(stre, :meter)
+            throw(ArgumentError("Can't check if strekning without properties 'meter', 'fra_meter' or 'til_meter' is contained in $ref"))
+        end
+        at_meter = extract_at_meter(ref)
+        if ! isnan(at_meter)
+            if round(stre.meter) == at_meter
+                if hasproperty(vsr, :kryssystem)
+                    rstre = vsr.kryssystem
+                elseif hasproperty(vsr, :sideanlegg)
+                    rstre = vsr.sideanlegg
+                    if hasproperty(rstre, :sideanleggsdel)
+                        sd = rstre.sideanleggsdel
+                        ref_sd = Int(extract_sideanleggsdel(ref))
+                        if sd !== ref_sd
+                            return false
+                        end
+                    end
+                else
+                    throw(ArgumentError("Can't check if vegsystemreferanse without properties 'kryssystem' or 'sideanlegg' is contained in $ref"))
+                end
+                if rstre.fra_meter <= ref_to
+                    if rstre.til_meter >= ref_from
+                        if rstre.til_meter - ref_from >= 1
+                            if ref_to - rstre.fra_meter >= 1
+                                return true
                             end
                         end
                     end
