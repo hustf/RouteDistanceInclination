@@ -56,7 +56,10 @@ function distance_between(pt1::T, pt2::T) where T<:Tuple{Float64, Float64}
     Δy = pt2[2] - pt1[2]
     hypot(Δx, Δy)
 end
-
+function distance_between(pt1::Float64, pt2::Float64)
+    Δx = pt2[1] - pt1[1]
+    hypot(Δx)
+end
 
 """
     interval_progression_pairs(ml)

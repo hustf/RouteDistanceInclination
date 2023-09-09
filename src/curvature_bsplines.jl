@@ -71,6 +71,10 @@ function smooth_signed_radii(ϕ´, s)
         r_unfiltered = 1 ./ κs
         return vcat(repeat([NaN], drop_pts), r_unfiltered,  repeat([NaN], drop_pts))
     end
+    # This filter works well when points are evenly distributed along the progression axis.
+    # Since we apply it on one curve at a time, that is normally the case.
+    # It will NOT be the case when points are dropped due to straight sections.
+    # In such sections, the curvature is of no interest, but check with care!
     κsm = smooth_coordinate(κs)
     # We keep the sign of curvature. Hence, curving to the left is positive, to right is negative.
     # Smooth signed radii:
@@ -107,32 +111,64 @@ end
     smooth_slope(z::T, progression::T) where T<: Vector{Float64}
     ---> Vector{Float64}
 
-This assumes z is low-resolution measurement, not really noisy measurement.
-This gives very spiky changes.
-progression is assumed to be directly useable.   
+For low-resolution measurement, not really noisy measurement.
 """
 function smooth_slope(z::T, progression::T) where T<: Vector{Float64}
-    x = progression
-    zsm = smooth_coordinate(z)
-    # Pad ends
-    xp = vcat(x[1], x, x[end])
-    zp = vcat(zsm[1], zsm, zsm[end])
-    b  = BSplineBasis(4, x)
-    fz´ = Function(Spline(b, zp), Derivative(1))
-    z´ = map(fz´, x)
-    # With this method, we most likely get reasonable end of range values
-    # by copying the next to last value.
-    z´[1] = z´[2]
-    z´[end - 1] = z´[end - 2]
-    z´[end] = z´[end - 1]
-    z´
+    s = progression
+    fz = resample_spline(s, z)
+    fz´ = s -> first(gradient(fz, s))
+    map(fz´, s)
 end
+
+
+"""
+    resample_spline(s, z; gridstep = 25)
+    ---> Vector{Float64}
+
+# Example
+```
+julia> phys(x) = 4sin(x); plot(phys)
+
+julia> sample(x) = round(phys(x));
+
+julia> # Samples x may be evenly distributed as here, or not. Must be rising.
+
+julia> x = collect(-5:0.1:5); y = map(sample, x); scatter!(x, y)
+
+julia> f = resample_spline(x, y; gridstep = 1)
+12-element scale(interpolate(OffsetArray(::Vector{Float64}, 0:13), BSpline(Cubic(Line(Interpolations.OnGrid())))), (-5.0:1.0:6.0,)) with element type Float64:
+  3.9999999999999996
+  3.0
+ -0.9999999999999999
+ -4.0
+  ⋮
+  1.0000000000000004
+ -2.9999999999999996
+ -3.9999999999999996
+ -4.0
+
+
+ julia> plot!(x, map(f, x))
+```
+"""
+function resample_spline(s, z; gridstep = 25)
+    # Step 1 define a grid, find linearly interpolated values for the grid.
+    sgrid = range(s[1], s[end] + gridstep, step = gridstep)
+    lin = extrapolate(interpolate((s,), z, Gridded(Linear())), Line())
+    zi = map(lin, sgrid)
+    # Step 2: Cubic interpolation based on the grid. Argument is index of sgrid.
+    cub_discrete = interpolate(zi, BSpline(Cubic(Line(OnGrid()))))
+    scale(cub_discrete, sgrid)
+end
+
+
 
 """
     smooth_coordinate(rough::Vector{Float64}; max_filter_length = 17)
     ---> Vector{Float64}
 
 Henderson moving average.
+This works well with evenly spaced points. Otherwise, it's terrible.
 """
 function smooth_coordinate(rough::Vector{Float64}; max_filter_length = 17)
     @assert ! iseven(max_filter_length)

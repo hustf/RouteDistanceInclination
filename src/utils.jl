@@ -494,33 +494,6 @@ function modify_fartsgrense_with_speedbumps!(speed_limitations::Vector{Vector{Fl
     speed_limitations
 end
 
-"""
-    unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
-    ---> Vector{Float64}, Vector{Float64}, Vector{Float64}
 
-We're joining curves where two ends are identical
-(we don't check that though)
-"""
-function unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
-    vx = Float64[] 
-    vy = Float64[] 
-    vz = Float64[] 
-    for i in 1:length(mls)
-        p = mls[i]
-        px = map(point -> point[1], p)
-        py = map(point -> point[2], p)
-        pz = map(point -> point[3], p)
-        if i == 1
-            append!(vx, px)
-            append!(vy, py)
-            append!(vz, pz)
-        else
-            append!(vx, px[2:end])
-            append!(vy, py[2:end])
-            append!(vz, pz[2:end])
-        end
-    end
-    vx, vy, vz
-end
 
 

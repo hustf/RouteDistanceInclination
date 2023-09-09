@@ -94,6 +94,7 @@ function route_data(easting1::T, northing1::T, easting2::T, northing2::T; defaul
     fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
     # End stops may be without defined fartsgrense. However, we need 
     # a start value, so modify if missing:
+    @assert fartsgrense_tuples isa Vector{Tuple{Float64, Int64, Int64}} typeof(fartsgrense_tuples)
     if isnan(fartsgrense_tuples[1][1])
         fartsgrense_tuples[1] = (1.0, default_fartsgrense, default_fartsgrense)
     end
@@ -170,4 +171,49 @@ function delete_memoization_file()
     else
         println("$fna Didn't and doesn't exist.")
     end
+end
+
+
+"""
+    unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
+    ---> Vector{Float64}, Vector{Float64}, Vector{Float64}
+
+We're joining curves where two ends are identical
+(we don't check that though)
+"""
+function unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tuple{Float64, Float64, Float64}}})
+    vx = Float64[] 
+    vy = Float64[] 
+    vz = Float64[] 
+    for i in 1:length(mls)
+        p = mls[i]
+        px = map(point -> point[1], p)
+        py = map(point -> point[2], p)
+        pz = map(point -> point[3], p)
+        if i == 1
+            append!(vx, px)
+            append!(vy, py)
+            append!(vz, pz)
+        else
+            append!(vx, px[2:end])
+            append!(vy, py[2:end])
+            append!(vz, pz[2:end])
+        end
+    end
+    vx, vy, vz
+end
+
+"""
+    plot_elevation_and_slope_vs_progression(d::Dict, na1, na2; layout = (1, 1))
+    ---> Plots.Plot
+
+# Example
+```
+julia> plot_elevation_and_slope_vs_progression(d, na1, na2; layout = (2, 1))
+```
+"""
+function plot_elevation_and_slope_vs_progression(d::Dict, na1, na2; layout = (1, 1))
+    p = plot(layout = layout, size = (1200, 800), thickness_scaling = 2, framestyle=:origin, 
+        legend = false, gridlinewidth = 2, gridstyle = :dash)
+    plot_elevation_and_slope_vs_progression!(p[1], d, na1, na2)
 end
