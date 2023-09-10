@@ -8,7 +8,8 @@ using Serialization
 import Interpolations
 using Interpolations: extrapolate, interpolate, Gridded, Linear, Line, Cubic, OnGrid, BSpline, scale, gradient
 using Plots
-export route_data, delete_memoization_file, nvdb_request, unique_unnested_coordinates_of_multiline_string, plot_elevation_and_slope_vs_progression
+export route_data, delete_memoization_file, nvdb_request, unique_unnested_coordinates_of_multiline_string,
+    plot_elevation_and_slope_vs_progression, link_split_key, coordinate_key
 "Contains patched routes"
 struct Quilt
     fromtos::Vector{Vector{Float64}} 

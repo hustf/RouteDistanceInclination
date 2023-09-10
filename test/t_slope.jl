@@ -89,43 +89,6 @@ function simple_int()
 end
 z_c = simple_int()
 @test abs(z_c - z[end]) < 0.15
-
-###
-# 
-##
- 
-function plot_z_and_slope_vs_progression(s, z, slope, progression_at_ends, refs, na1, na2)
-    p = plot(layout = (2, 1), size = (1200, 800), thickness_scaling = 2, framestyle=:origin, 
-    legend = false, gridlinewidth = 2, gridstyle = :dash)
-    plot!(p[1], s, slope)
-    title!(p[1], "Slope [-] - Progression [m]")
-    title!(p[2], "Elevation z [m]- Progression [m]")
-    plot!(p[2], s, z)
-    vline!(p[2], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
-    vline!(p[1], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
-    for i in 1:(length(refs) - 1)
-        xs = (progression_at_ends[i] + progression_at_ends[i + 1]) / 2
-        ref = "$i:" * refs[i][5:end]
-        j = findfirst(x -> x > xs, s )
-        y = z[j]
-        t = text(ref, 6, :center, :top, :blue, rotation = -30)
-        annotate!(p[2], [(xs, y, t)])
-    end
-    t1 = text(na1, 8, :left, :bottom, :green, rotation = -90)
-    annotate!(p[1], [(0, maximum(slope), t1)])
-    t2 = text(na2, 8, :left, :top, :green, rotation = -90)
-    annotate!(p[1], [(s[end], maximum(slope), t2)])
-    p
-end
-function plot_z_and_slope_vs_progression(d::Dict, na1, na2)
-    s = d[:progression]
-    slope = d[:slope]
-    progression_at_ends = d[:progression_at_ends]
-    mls = d[  :multi_linestring]
-    _, _, z = unique_unnested_coordinates_of_multiline_string(mls)
-    refs = d[:prefixed_vegsystemreferanse]
-    plot_z_and_slope_vs_progression(s, z, slope, progression_at_ends, refs, na1, na2)
-end
     
 ### 
 na1 = "Dragsund vest"
@@ -140,5 +103,4 @@ d = route_data(ea1, no1, ea2, no2)
 mls = d[:multi_linestring]
 s = d[:progression]
 _, _, z = unique_unnested_coordinates_of_multiline_string(mls)
-p = plot_z_and_slope_vs_progression(d, na1, na2)
-# Also see the exported plot function
+plot_elevation_and_slope_vs_progression(d, na1, na2)

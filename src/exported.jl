@@ -42,7 +42,7 @@ julia> route_data(;start = "23593.713839066448,6942485.5900078565", slutt = "237
 
 julia> route_data(23594,6942486, 23771,6942715);
 Curvature limited velocity: 32.46935208780521 km/h at 109.79520214324043 m due to radius 67.78927629898796
-Route data (23594 6942486)-(23771 6942715) stored in C:\\Users\\f\\RouteSlopeDistance.jls
+    Route data (23594 6942486)-(23771 6942715) stored in C:\\Users\\f\\RouteSlopeDistance.jls
 Dict{Symbol, Any} with 7 entries:
   :radius_of_curvature         => [NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN  …  170.586, 145.066, 131.182, 123.6, 119.802, 118.416, 120.765, 120.486, NaN, NaN] 
   :multi_linestring            => [[(23594.2, 6.94249e6, 10.483), (23594.1, 6.94249e6, 10.507), (23593.1, 6.9425e6, 10.657), (23592.9, 6.9425e6, 10.667), (23591.7, 6.9…
@@ -152,7 +152,7 @@ function route_data(s::String; default_fartsgrense = 50)
         @assert contains(s, '-')
         # key-style: "(23594 6942486)-(23771 6942715)"
         args = split(s, '-')
-        start = replace(strip(args[2], ['(', ')'] ), ' ' => ',')
+        start = replace(strip(args[1], ['(', ')'] ), ' ' => ',')
         slutt = replace(strip(args[2], ['(', ')'] ), ' ' => ',')
     end
     route_data(;start, slutt, default_fartsgrense)
@@ -216,4 +216,48 @@ function plot_elevation_and_slope_vs_progression(d::Dict, na1, na2; layout = (1,
     p = plot(layout = layout, size = (1200, 800), thickness_scaling = 2, framestyle=:origin, 
         legend = false, gridlinewidth = 2, gridstyle = :dash)
     plot_elevation_and_slope_vs_progression!(p[1], d, na1, na2)
+end
+
+
+"""
+    coordinate_key(ingoing::Bool, ea, no)
+    --> String
+
+'no' is northing
+'ea' is easting
+'ingoin' = true: This point is fit for driving
+in to this destination.
+'ingoing' = false: Exit the origin here.
+
+Often, the entry point to a route is different than
+the exit point, and this matters to finding routes.
+
+Prepare or look up entries for coordinate replacements.
+This patches for status code 4041 and 4042.
+
+One could make the value (the replacement) manually from
+e.g. Norgeskart.
+""" 
+coordinate_key(ingoing::Bool, ea, no) = (ingoing ? "In to " : "Out of " ) * "$(Int(round(ea))) $(Int(round(no)))"
+
+"""
+    link_split_key(ea1, no1, ea2, no2)
+    link_split_key(start_pt::T, end_pt::T) where T<:Tuple{Float64, Float64, Float64}
+    --> String
+
+'no1' is northing start
+'ea1' is easting start
+'no2' is northing start
+'ea2' is easting start
+
+Prepare or look up entries for link splits.
+
+One could make the value (the replacement) manually from
+e.g. Norgeskart.   
+"""
+link_split_key(ea1, no1, ea2, no2) = "($(Int(round(ea1))) $(Int(round(no1))))-($(Int(round(ea2))) $(Int(round(no2))))"
+function link_split_key(start_pt::T, end_pt::T) where T<:Tuple{Float64, Float64, Float64}
+    ea1, no1, _ = start_pt
+    ea2, no2, _ = end_pt
+    link_split_key(ea1, no1, ea2, no2)
 end

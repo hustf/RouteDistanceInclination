@@ -10,17 +10,17 @@ Returns a vector where 'true' indicated that this linestring was reversed.
 This may be used for reversing associated data.
 """
 function reverse_linestrings_where_needed!(multi_linestring, easting1, northing1)
-    previous_point = (easting1, northing1, 0.0)
+    previous_point_projected = (easting1, northing1)
     reversed = Bool[]
     for i in eachindex(multi_linestring)
-        current_first_point = multi_linestring[i][1]
-        current_last_point = multi_linestring[i][end]
-        isrev = is_reversed(previous_point, current_first_point, current_last_point)
+        current_first_point_projected = multi_linestring[i][1][1:2]
+        current_last_point_projected = multi_linestring[i][end][1:2]
+        isrev = is_reversed(previous_point_projected, current_first_point_projected, current_last_point_projected)
         if isrev
             reverse!(multi_linestring[i])
         end
         push!(reversed, isrev)
-        previous_point = multi_linestring[i][end]
+        previous_point_projected = multi_linestring[i][end]
     end
     reversed
 end
@@ -35,7 +35,7 @@ end
     check_continuity_of_multi_linestring(multi_linestring)
 
 The last point in a linestring should match with the first point of the next.
-We do allow some leeway here, 10 cm.
+We do allow some leeway here, 50 cm.
 """
 function check_continuity_of_multi_linestring(multi_linestring)
     # A little bit of checking that the geometry is right
@@ -45,11 +45,10 @@ function check_continuity_of_multi_linestring(multi_linestring)
         thisstart = ls[1]
         thisend = ls[end]
         if i > 1 
-            if distance_between(thisstart, previousend) > 0.1 
+            if distance_between(thisstart, previousend) > 0.1
                 msg = "Not matching start point $thisstart and previous end $previousend \n"
                 msg *= "The distance between is  $(distance_between(thisstart, previousend))\n"
-                msg *= "This start point is on $(vegsystemreferanse_prefixed[i])\n"
-                msg *= "Previous end is on $(vegsystemreferanse_prefixed[i - 1])\n"
+                msg *= "For checking with other tools: $(link_split_key(thisstart, thisend)) \n"
                 println()
                 throw(AssertionError(msg))
             end
@@ -474,7 +473,7 @@ function modify_fartsgrense_with_speedbumps!(speed_limitations::Vector{Vector{Fl
     for (i, enveloping_ref) in enumerate(prefixed_refs)
         relevant_bumps = filter(b -> is_rpoint_in_ref(b, enveloping_ref), all_bumps)
         if length(relevant_bumps) > 0
-            println("found $relevant_bumps contained by $enveloping_ref")
+            println("\tFound bumps $relevant_bumps contained by $enveloping_ref")
             for bump in relevant_bumps
                 bump_at_meter = extract_from_to_meter(bump)[1]
                 ref_start_at_meter = extract_from_to_meter(enveloping_ref)[1]

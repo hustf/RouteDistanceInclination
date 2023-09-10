@@ -1,3 +1,5 @@
+# Also see 'exported.jl'.
+
 function _prepare_init_file_configuration(io)
     # Add a comment at top (IniFile.jl has no functions for comments)
     msg = """
@@ -28,18 +30,24 @@ function _prepare_init_file_configuration(io)
     # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding 
     # new keys. Function `link_split_key(ea1, no1, ea2, no2)` can be useful.
     #
-    # Notøy -> Røyra øst
-    set(conta, "link split", "(19429 6943497)-(19922 6944583)", "20160 6944585")
-    # Ulstein vgs. -> Støylesvingen
-    set(conta, "link split", "(28961 6945248)-(28275 6945289)", "28684 6945112")
-    # Botnen -> Garneskrysset. Merk at Garneskrysset etterpå blir erstattet av ny koordinat.
-    set(conta, "link split", "(26807 6941534)-(26449 6940130)", "26141 6941016")
+    # You can edit the init file manually. If you revise here instead,
+    # then do:
+    #
+    # julia> RouteSlopeDistance.delete_init_file()
+    # Removed C:\Users\frohu_h4g8g6y\RouteSlopeDistance.ini
+    #
+    # Notøy <-> Røyra øst
+    _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585", also_reverse = true)
+    # Ulstein vgs. <-> Støylesvingen
+    _add_link_split(conta, "(28961 6945248)-(28275 6945289)", "28684 6945112", also_reverse = true)
+    # Botnen <-> Garneskrysset. 
+    _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", also_reverse = true)
     # Myrvåglomma -> Myrvåg
     set(conta, "link split", "(23911 6938921)-(23412 6939348)", "23732 6938944")
-    # Røyra vest -> Frøystadvåg
-    set(conta, "link split", "(19605 6944608)-(19495 6945400)", "19332 6945107")
-    # Frøystadvåg -> Frøystadkrysset
-    set(conta, "link split", "(19495 6945400)-(19646 6945703)", "19741 6945636")
+    # Røyra vest <-> Frøystadvåg
+    _add_link_split(conta, "(19605 6944608)-(19495 6945400)", "19332 6945107", also_reverse = true)
+    # Frøystadvåg <-> Frøystadkrysset
+    _add_link_split(conta, "(19495 6945400)-(19646 6945703)", "19741 6945636", also_reverse = true)
     # 
     #########################
     # Coordinate replacements
@@ -148,40 +156,21 @@ end
 _get_fnam_but_dont_create_file() =  joinpath(homedir(), "RouteSlopeDistance.ini")
 
 
-
 """
-    coordinate_key(ingoing::Bool, ea, no)
-    --> String
+    _add_link_split(conta, keypair::String, keycoordinate; also_reverse = false)
+    ---> Vector{Float64}
 
-'no' is northing
-'ea' is easting
-'ingoin' = true: This point is fit for driving
-in to this destination.
-'ingoing' = false: Exit the origin here.
-
-Often, the entry point to a route is different than
-the exit point, and this matters to finding routes.
-
-Prepare or look up entries for coordinate replacements.
-This patches for status code 4041 and 4042.
-
-One could make the value (the replacement) manually from
-e.g. Norgeskart.
-""" 
-coordinate_key(ingoing::Bool, ea, no) = (ingoing ? "In to " : "Out of " ) * "$(Int(round(ea))) $(Int(round(no)))"
-
+# Example
+```
+julia> _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585"; also_reverse = true)
+```
 """
-    link_key(ea1, no1, ea2, no2)
-    --> String
-
-'no1' is northing start
-'ea1' is easting start
-'no2' is northing start
-'ea2' is easting start
-
-Prepare or look up entries for link splits.
-
-One could make the value (the replacement) manually from
-e.g. Norgeskart.   
-"""
-link_split_key(ea1, no1, ea2, no2) = "($(Int(round(ea1))) $(Int(round(no1))))-($(Int(round(ea2))) $(Int(round(no2))))"
+function _add_link_split(conta, keypair::String, keycoordinate::String; also_reverse = false)
+    set(conta, "link split", keypair, keycoordinate)
+    if also_reverse
+        fromkey, tokey = split(keypair, '-')
+        kpr = tokey * '-' * fromkey
+        set(conta, "link split", kpr, keycoordinate)
+    end
+    nothing
+end

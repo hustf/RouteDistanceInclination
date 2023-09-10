@@ -51,7 +51,7 @@ function distance_between(pt1, pt2)
     Δz = pt2[3] - pt1[3]
     hypot(Δx, Δy, Δz)
 end
-function distance_between(pt1::T, pt2::T) where T<:Tuple{Float64, Float64}
+function distance_between(pt1, pt2::T) where T<:Tuple{Float64, Float64}
     Δx = pt2[1] - pt1[1]
     Δy = pt2[2] - pt1[2]
     hypot(Δx, Δy)

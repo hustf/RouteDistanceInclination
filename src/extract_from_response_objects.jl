@@ -143,7 +143,6 @@ function extract_multi_linestrings(o, ea, no)
     end
     @assert ! isempty(multi_linestring)
     # Flip the order of points if necessary for continuity. 
-
     reversed = reverse_linestrings_where_needed!(multi_linestring, ea, no)
     @assert ! isempty(multi_linestring)
     check_continuity_of_multi_linestring(multi_linestring)

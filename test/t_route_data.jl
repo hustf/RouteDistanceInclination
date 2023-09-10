@@ -44,16 +44,19 @@ progression_at_ends = append!([0.0], cumsum(lengths))
 @test length(progression_at_ends) == length(mls) + 1
 
 # 0.000280 seconds (1.96 k allocations: 181.469 KiB)
-@time  progression, r = progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
+@time  progression, radius_of_curvature  = progression_and_radii_of_curvature_from_multiline_string(mls, progression_at_ends)
 
 @test issorted(progression)
-@test length(r) == length(progression)
-slope = smooth_slope_from_multiline_string(mls, progression)
+@test length(radius_of_curvature) == length(progression)
+# 0.000126 seconds (177 allocations: 33.203 KiB)
+@time slope = smooth_slope_from_multiline_string(mls, progression);
 @test length(slope)  == length(progression)
 
 
-#   8.807276 seconds (13.95 k allocations: 1.346 MiB)
-@time fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed)
+# 9.235375 seconds (15.21 k allocations: 1.389 MiB)
+# 5.898970 seconds (15.11 k allocations: 1.520 MiB)
+# 8.395259 seconds (15.16 k allocations: 1.420 MiB)
+@time fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed);
 @assert fartsgrense_tuples isa Vector{Tuple}
 
 if isnan(fartsgrense_tuples[1][1])
@@ -61,10 +64,11 @@ if isnan(fartsgrense_tuples[1][1])
 end
 
 #  0.000038 seconds (121 allocations: 13.375 KiB)
-@time speed_lims_in_intervals = speed_nested_in_intervals(fartsgrense_tuples, mls)
+@time speed_lims_in_intervals = speed_nested_in_intervals(fartsgrense_tuples, mls);
 
-# 1.197382 seconds (2.33 k allocations: 234.508 KiB)
-@time modify_fartsgrense_with_speedbumps!(speed_lims_in_intervals, refs, mls)
+#  2.128427 seconds (1.65 k allocations: 144.828 KiB)
+#  0.707068 seconds (1.65 k allocations: 144.828 KiB)
+@time modify_fartsgrense_with_speedbumps!(speed_lims_in_intervals, refs, mls);
 
 
 # Unpack nested speed limitations. Apply at first coordinate of each interval (there is one more coordinate than intervals)
@@ -146,43 +150,32 @@ end
 # Spot checks
 #############
 using Plots
-# TODO: Vertical dashed line at start and ends.
-# Maybe add text at the midpoint of a strekning.
-#old_xticks = xticks(plt[1]) # grab xticks of the 1st subplot
-#new_xticks = ([5, 8], ["\$\\bar \\delta\$", "\$\\bar \\gamma\$"])
-#vline!(new_xticks[1])
-#keep_indices = findall(x -> all(x .≠ new_xticks[1]), old_xticks[1])
-#merged_xticks = (old_xticks[1][keep_indices] ∪ new_xticks[1], old_xticks[2][keep_indices] ∪ new_xticks[2])
-#xticks!(merged_xticks)
-function plot_speed_and_slope_vs_progression(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
-    p = plot(layout = (2, 1), size = (1200, 800), thickness_scaling = 2, framestyle=:origin, legend = false)
-    plot!(p[1], s, slope)
-    title!(p[1], "Slope [-] - Progression [m]")
-    title!(p[2], "Speed limit [km/h]- Progression [m]")
-    plot!(p[2], s, speed_limitation)
-    vline!(p[2], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
-    vline!(p[1], progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
+function plot_speed_limit_vs_progression!(p, s, speed_limitation, progression_at_ends, refs)
+    title!(p, "Speed limit [km/h]- Progression [m]")
+    plot!(p, s, speed_limitation)
+    vline!(p, progression_at_ends, line=(1, :dash, 0.6, [:salmon :green :red]))
     for i in 1:(length(refs) - 1)
         xs = (progression_at_ends[i] + progression_at_ends[i + 1]) / 2
         ref = "$i:" * refs[i][5:end]
         j = findfirst(x -> x > xs, s )
-        y = speed_limitation[j]
+        y = (maximum(speed_limitation) + minimum(speed_limitation)) / 2
         t = text(ref, 6, :center, :top, :blue, rotation = -30)
-        annotate!(p[2], [(xs, y, t)])
+        annotate!(p, [(xs, y, t)])
     end
-    t1 = text(na1, 8, :left, :bottom, :green, rotation = -90)
-    annotate!(p[1], [(0, maximum(slope), t1)])
-    t2 = text(na2, 8, :left, :top, :green, rotation = -90)
-    annotate!(p[1], [(s[end], maximum(slope), t2)])
     p
 end
-function plot_speed_and_slope_vs_progression(d::Dict, na1, na2)
+function plot_speed_limit_vs_progression!(p, d::Dict)
     speed_limitation = d[:speed_limitation]
     s = d[:progression]
-    slope = d[:slope]
     refs = d[:prefixed_vegsystemreferanse]
     progression_at_ends = d[:progression_at_ends]
-    plot_speed_and_slope_vs_progression(s, slope, speed_limitation, progression_at_ends, refs, na1, na2)
+    plot_speed_limit_vs_progression!(p, s, speed_limitation, progression_at_ends, refs)
+end
+
+function plot_elevation_slope_speed_vs_progression(d::Dict, na1, na2)
+    p = plot_elevation_and_slope_vs_progression(d, na1, na2; layout = (2, 1))
+    plot_speed_limit_vs_progression!(p[2], d)
+    p
 end
 
 start, stop = 44, 45
@@ -191,8 +184,7 @@ na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-plot_speed_and_slope_vs_progression(d, na1, na2)
-# plot_z_and_slope_vs_progression(d, na1, na2)    # Def in t_slope.jl
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
 # Reverse, which requires reading speed limits from a sideanlegg.
@@ -202,8 +194,7 @@ na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-plot_speed_and_slope_vs_progression(d, na1, na2)
-# plot_z_and_slope_vs_progression(d, na1, na2)
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
 # This works fine
@@ -213,12 +204,29 @@ na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-plot_speed_and_slope_vs_progression(d, na1, na2)
-# plot_z_and_slope_vs_progression(d, na1, na2)
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
+# Very short part of geometry
+start, stop = 14, 13
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_data(ea1, no1, ea2, no2)
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
-###
+# Very short geometry
+start, stop = 31, 30
+na1, ea1, no1 = M[start, :]
+na2, ea2, no2 = M[stop, :]
+print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
+println(link_split_key(ea1, no1, ea2, no2))
+d = route_data(ea1, no1, ea2, no2)
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
+
+
+# Large internal gap in geometry
 na1 = "Eika"
 ea1 = 28130
 no1 = 6934881
@@ -228,10 +236,9 @@ no2 = 6932152
 print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-plot_speed_and_slope_vs_progression(d, na1, na2)
-# plot_z_and_slope_vs_progression(d, na1, na2)
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
-### 
+# Zoom in on hilltop
 na1 = "Dragsund vest"
 ea1 = 25183
 no1 = 6939251
@@ -241,13 +248,4 @@ no2 = 6939427
 print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
-plot_speed_and_slope_vs_progression(d, na1, na2)
-# plot_z_and_slope_vs_progression(d, na1, na2)
-
-
-
-
-
-plot_elevation_and_slope_vs_progression(d::Dict) = plot_elevation_and_slope_vs_progression(d::Dict, "", "")
-
-plot_elevation_and_slope_vs_progression(d, na1, na2)
+plot_elevation_slope_speed_vs_progression(d, na1, na2)
