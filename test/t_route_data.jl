@@ -249,3 +249,18 @@ print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
+
+
+# Very long segments
+M = [
+        "Furene"  34704.02934877493 6.925611477026481e6
+   "Hovdevatnet"  34518.196321014024 6.927170180268251e6
+       "Sørheim"  32452.359661614348 6.930544175301035e6
+   "Eiksundbrua"  27962.943228726042 6.935575608564657e6
+         "Havåg"  27158.069171806448 6.935797677843009e6
+    "Ytre Havåg"  26697.496363543847 6.935840729109902e6
+        "Selvåg"  26436.38730712392 6.935971888446139e6
+    "Haddal sør"  27382.382110235572 6.938074367847498e6
+   "Haddal nord"  27279.904246060643 6.939081106502798e6
+  "Garneskrysset" 26448.894934401556 6.940129956181607e6
+]

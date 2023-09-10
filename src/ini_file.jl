@@ -42,12 +42,19 @@ function _prepare_init_file_configuration(io)
     _add_link_split(conta, "(28961 6945248)-(28275 6945289)", "28684 6945112", also_reverse = true)
     # Botnen <-> Garneskrysset. 
     _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", also_reverse = true)
-    # Myrvåglomma -> Myrvåg
-    set(conta, "link split", "(23911 6938921)-(23412 6939348)", "23732 6938944")
+    # Myrvåglomma <-> Myrvåg
+    _add_link_split(conta, "(23911 6938921)-(23412 6939348)", "23732 6938944", also_reverse = true)
     # Røyra vest <-> Frøystadvåg
     _add_link_split(conta, "(19605 6944608)-(19495 6945400)", "19332 6945107", also_reverse = true)
     # Frøystadvåg <-> Frøystadkrysset
     _add_link_split(conta, "(19495 6945400)-(19646 6945703)", "19741 6945636", also_reverse = true)
+    # Hareid ungdomsskule fv. 61 -> Hareid bussterminal
+    _add_link_split(conta, "(36533 6947582)-(36976 6947659)", "36942 6947647", also_reverse = false)
+    # Furene -> Hovdevatnet 
+    _add_link_split(conta, "(34704 6925611)-(34518 6927170)", "34922 6925892", also_reverse = false)
+    # Sørheim <-> Eiksundbrua
+    _add_link_split(conta, "(32452 6930544)-(27963 6935576)", "28970 6931629", also_reverse = true)
+    _add_link_split(conta, "(28970 6931629)-(27963 6935576)", "27809 6934212", also_reverse = true)
     # 
     #########################
     # Coordinate replacements
@@ -64,8 +71,7 @@ function _prepare_init_file_configuration(io)
     set(conta, "coordinates replacement", "Out of 16064 6947515", "16075 6947499")
     # Hareid bussterminal
     set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
-    set(conta, "coordinates replacement", "In to 36976 6947659", "36990 6947639")
-
+    set(conta, "coordinates replacement", "In to 36976 6947659", "36943 6947661")
 
     # To file..
     println(io, conta)
