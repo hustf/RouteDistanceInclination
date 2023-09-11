@@ -252,7 +252,11 @@ vegsystemreferanse. The highest meter value comes first.
 This corrects the error by swapping the last two numbers.
 """
 function correct_to_increasing_distance(ref::String)
-    ref_from, ref_to = extract_from_to_meter(ref)
+    tup = extract_from_to_meter(ref)
+    if length(tup) < 2
+        return ref
+    end
+    ref_from, ref_to = tup
     if ref_from <= ref_to 
         return ref
     else

@@ -12,9 +12,10 @@ export route_data, delete_memoization_file, nvdb_request, unique_unnested_coordi
     plot_elevation_and_slope_vs_progression, link_split_key, coordinate_key
 "Contains patched routes"
 struct Quilt
-    fromtos::Vector{Vector{Float64}} 
+    fromtos::Vector{Vector{Int64}}
     patches::Vector{JSON3.Object}
 end
+Quilt() = Quilt(Vector{Vector{Int64}}(), Vector{JSON3.Object}())
 
 include("ini_file.jl")
 include("nvdb_utils.jl")

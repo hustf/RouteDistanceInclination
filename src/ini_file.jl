@@ -36,10 +36,16 @@ function _prepare_init_file_configuration(io)
     # julia> RouteSlopeDistance.delete_init_file()
     # Removed C:\Users\frohu_h4g8g6y\RouteSlopeDistance.ini
     #
+    # For testing purpose
+    _add_link_split(conta, "(1 1)-(5 5)", "2 2", also_reverse = false)
+    _add_link_split(conta, "(2 2)-(5 5)", "3 3", also_reverse = false)
+    _add_link_split(conta, "(3 3)-(5 5)", "4 4", also_reverse = false)
     # Notøy <-> Røyra øst
     _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585", also_reverse = true)
     # Ulstein vgs. <-> Støylesvingen
     _add_link_split(conta, "(28961 6945248)-(28275 6945289)", "28684 6945112", also_reverse = true)
+    # Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.
+    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", also_reverse = false)
     # Botnen <-> Garneskrysset. 
     _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", also_reverse = true)
     # Myrvåglomma <-> Myrvåg
@@ -75,7 +81,7 @@ function _prepare_init_file_configuration(io)
 
     # To file..
     println(io, conta)
-end
+end 
 
 
 """
