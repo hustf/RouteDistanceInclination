@@ -1,3 +1,11 @@
+########################################################
+# This tests on the public api level (route_data)
+# and also on a level beneath the public api level.
+#
+# It also extends the exported plot definition 
+# `plot_elevation_and_slope_vs_progression` 
+# to add more details. 
+########################################################
 using Test
 using RouteSlopeDistance
 using RouteSlopeDistance: patched_post_beta_vegnett_rute, 
@@ -57,7 +65,7 @@ progression_at_ends = append!([0.0], cumsum(lengths))
 # 5.898970 seconds (15.11 k allocations: 1.520 MiB)
 # 8.395259 seconds (15.16 k allocations: 1.420 MiB)
 @time fartsgrense_tuples = fartsgrense_from_prefixed_vegsystemreferanse.(refs, reversed);
-@assert fartsgrense_tuples isa Vector{Tuple}
+@assert fartsgrense_tuples isa Vector{Tuple{Float64, Int64, Int64}}
 
 if isnan(fartsgrense_tuples[1][1])
     fartsgrense_tuples[1] = (1.0, 50, 50)
@@ -249,18 +257,3 @@ print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
-
-
-# Very long segments
-M = [
-        "Furene"  34704.02934877493 6.925611477026481e6
-   "Hovdevatnet"  34518.196321014024 6.927170180268251e6
-       "Sørheim"  32452.359661614348 6.930544175301035e6
-   "Eiksundbrua"  27962.943228726042 6.935575608564657e6
-         "Havåg"  27158.069171806448 6.935797677843009e6
-    "Ytre Havåg"  26697.496363543847 6.935840729109902e6
-        "Selvåg"  26436.38730712392 6.935971888446139e6
-    "Haddal sør"  27382.382110235572 6.938074367847498e6
-   "Haddal nord"  27279.904246060643 6.939081106502798e6
-  "Garneskrysset" 26448.894934401556 6.940129956181607e6
-]

@@ -1,7 +1,7 @@
 name = "RouteSlopeDistance"
 uuid = "07025e9e-5a27-4179-b043-88080b1ee239"
 authors = ["hustf <hustf@users.noreply.github.com> and contributors"]
-version = "0.2.1"
+version = "0.2.2"
 
 [deps]
 BSplines = "488c2830-172b-11e9-1591-253b8a7df96d"
@@ -17,5 +17,9 @@ Smoothers = "012d725f-b4dd-4916-8440-03955fc52575"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
+[weakdeps]
+Pango_jll = "36c8627f-9965-5494-a995-c6b170f724f3"
+
 [compat]
+Pango_jll = "1.42.4,10"
 julia = "1.9"

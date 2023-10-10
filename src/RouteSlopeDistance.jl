@@ -1,4 +1,4 @@
-module RouteSlopeDistance()
+module RouteSlopeDistance
 using HTTP, IniFile, JSON3, UUIDs, Dates
 import BSplines
 using BSplines: BSplineBasis, Spline, Derivative, Function

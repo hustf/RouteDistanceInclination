@@ -1,3 +1,16 @@
+#########################################################################
+# This tests how well RouteSlopeDistance.progression_and_radii_of_segment
+# could measure radius from sampled points.
+# We use points perfectly placed on arcs with known radius,
+# and vary the density of sampling points.
+# 
+# We then test helixes (we are interested in the projected radius),
+# and spirals (varying radius).
+#
+# Plots are used for checking understanding and could be commented out 
+# so that the Plots dependency can be dropped.
+#########################################################################
+
 using Test
 using RouteSlopeDistance
 using RouteSlopeDistance: progression_and_radii_of_segment
@@ -99,6 +112,8 @@ function test_spiral(np; reversed = false)
     s, r, px, py, pz
 end 
 
+# "Flat spiral" starting with small radius, left turning.
+# Radius is positive, right hand rule
 np = 999
 s, r, px, py, pz = test_spiral(np)
 plot(px, py, marker = true)
@@ -106,6 +121,8 @@ plot(s, r)
 @test maximum(abs.(filter(!isnan, r))) < 500
 @test minimum(filter(!isnan, r)) > 0
 
+# "Flat spiral" starting with large absolute radius, right turning.
+# Radius is negative, right hand rule
 np = 999
 s, r, px, py, pz = test_spiral(np; reversed = true)
 plot(px, py, marker = true)

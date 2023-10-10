@@ -48,6 +48,10 @@ function _prepare_init_file_configuration(io)
     _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", also_reverse = false)
     # Botnen <-> Garneskrysset. 
     _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", also_reverse = true)
+    # Haddal nord -> Garneskrysset: Force right side roundabout
+    _add_link_split(conta, "(27280 6939081)-(26449 6940130)", "26568 6940237", also_reverse = false)
+    # Garneskrysset -> Haddal nord: Force turn going out
+    _add_link_split(conta, "(26449 6940130)-(27280 6939081)", "26461 6940151", also_reverse = false)
     # Myrvåglomma <-> Myrvåg
     _add_link_split(conta, "(23911 6938921)-(23412 6939348)", "23732 6938944", also_reverse = true)
     # Røyra vest <-> Frøystadvåg
@@ -57,10 +61,14 @@ function _prepare_init_file_configuration(io)
     # Hareid ungdomsskule fv. 61 -> Hareid bussterminal
     _add_link_split(conta, "(36533 6947582)-(36976 6947659)", "36942 6947647", also_reverse = false)
     # Furene -> Hovdevatnet 
-    _add_link_split(conta, "(34704 6925611)-(34518 6927170)", "34922 6925892", also_reverse = false)
+    _add_link_split(conta, "(34704 6925611)-(34518 6927170)", "34922 6925892", also_reverse = true)
+    _add_link_split(conta, "(34704 6925611)-(34922 6925892)", "35020 6925801", also_reverse = false)
     # Sørheim <-> Eiksundbrua
     _add_link_split(conta, "(32452 6930544)-(27963 6935576)", "28970 6931629", also_reverse = true)
     _add_link_split(conta, "(28970 6931629)-(27963 6935576)", "27809 6934212", also_reverse = true)
+    _add_link_split(conta, "(27809 6934212)-(27963 6935576)", "28133 6935541", also_reverse = true)
+     
+    #     _add_link_split(conta, "", "", also_reverse = true)
     # 
     #########################
     # Coordinate replacements
@@ -86,6 +94,7 @@ end
 
 """
     get_config_value(sect::String, key::String)
+    get_config_value(sect, key, type::DataType; nothing_if_not_found = false)
 
 Instead of passing long argument lists, we store configuration in a text file.
 """

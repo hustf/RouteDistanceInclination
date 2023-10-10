@@ -225,12 +225,14 @@ end
 
 'no' is northing
 'ea' is easting
-'ingoin' = true: This point is fit for driving
+'ingoing' = true: This point is fit for driving
 in to this destination.
 'ingoing' = false: Exit the origin here.
 
 Often, the entry point to a route is different than
 the exit point, and this matters to finding routes.
+E.g. one enters a spot from one road (exits the route),
+and exits the spot (enters the route) to another road. 
 
 Prepare or look up entries for coordinate replacements.
 This patches for status code 4041 and 4042.

@@ -19,7 +19,9 @@ function extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)
             msg *= "$(coordinate_key(true, ea2, no2)):\n\t\t"
             msg *= get_posisjon(ea2, no2)
             msg *= "\n\t"
-            msg *= "$(link_split_key(ea1, no1, ea2, no2))\n\t\t"
+            msg *= "$(link_split_key(ea1, no1, ea2, no2))     (for .ini file)"
+            msg *= "\n\t"
+            msg *= " $ea1,$no1   $ea2,$no2    (for https://nvdb-vegdata.github.io/nvdb-visrute/STM/ ) \n\t\t"
             return [msg]
         elseif o.metadata.status == 4041
             msg = "Error: $(o.metadata.status)  $(o.metadata.status_tekst) \n"
