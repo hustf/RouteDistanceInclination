@@ -1,8 +1,8 @@
 """
-    route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Int
-    route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
-    route_data(;start = "", slutt = ""; default_fartsgrense = 50)
-    route_data(s::String; default_fartsgrense = 50)
+    route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Int
+    route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
+    route_leg_data(;start = "", slutt = ""; default_fartsgrense = 50)
+    route_leg_data(s::String; default_fartsgrense = 50)
 
     --> Dict{Any}
 
@@ -32,15 +32,15 @@ Three calls, same result:
 ```
 julia> s = "https://nvdbapiles-v3.atlas.vegvesen.no/beta/vegnett/rute?start=23593.713839066448,6942485.5900078565&slutt=23771.052968726202,6942714.9388697725&ma......etc"
 
-julia route_data(s);
+julia route_leg_data(s);
 
 julia> s = "(23594 6942486)-(23771 6942715)"
 
-julia> route_data(s);
+julia> route_leg_data(s);
 
-julia> route_data(;start = "23593.713839066448,6942485.5900078565", slutt = "23771.052968726202,6942714.9388697725");
+julia> route_leg_data(;start = "23593.713839066448,6942485.5900078565", slutt = "23771.052968726202,6942714.9388697725");
 
-julia> route_data(23594,6942486, 23771,6942715);
+julia> route_leg_data(23594,6942486, 23771,6942715);
 Curvature limited velocity: 32.46935208780521 km/h at 109.79520214324043 m due to radius 67.78927629898796
     Route data (23594 6942486)-(23771 6942715) stored in C:\\Users\\f\\RouteSlopeDistance.jls
 Dict{Symbol, Any} with 7 entries:
@@ -54,7 +54,7 @@ Dict{Symbol, Any} with 7 entries:
 
 ```
 """
-function route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Int
+function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Int
     # Use stored data if available.
     key = link_split_key(easting1, northing1, easting2, northing2)
     thisdata = get_memoized_value(key)
@@ -124,23 +124,23 @@ function route_data(easting1::T, northing1::T, easting2::T, northing2::T; defaul
     # Store results on disk.
     set_memoized_value(key, thisdata)
 end
-function route_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
+function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
     ea1 = Int(round(easting1))
     no1 = Int(round(northing1))
     ea2 = Int(round(easting2))
     no2 = Int(round(northing2))
-    route_data(ea1, no1, ea2, no2; default_fartsgrense)
+    route_leg_data(ea1, no1, ea2, no2; default_fartsgrense)
 end
-function route_data(;start = "", slutt = "", default_fartsgrense = 50)
+function route_leg_data(;start = "", slutt = "", default_fartsgrense = 50)
     stea, stno = split(start, ',')
     slea, slno = split(slutt, ',')
     ea1 = Int(round(tryparse(Float64, stea)))
     no1 = Int(round(tryparse(Float64, stno)))
     ea2 = Int(round(tryparse(Float64, slea)))
     no2 = Int(round(tryparse(Float64, slno)))
-    route_data(ea1, no1, ea2, no2; default_fartsgrense)
+    route_leg_data(ea1, no1, ea2, no2; default_fartsgrense)
 end
-function route_data(s::String; default_fartsgrense = 50)
+function route_leg_data(s::String; default_fartsgrense = 50)
     if contains(s, '?')
         # url-style
         args = split(split(s, '?')[2], '&')
@@ -155,7 +155,7 @@ function route_data(s::String; default_fartsgrense = 50)
         start = replace(strip(args[1], ['(', ')'] ), ' ' => ',')
         slutt = replace(strip(args[2], ['(', ')'] ), ' ' => ',')
     end
-    route_data(;start, slutt, default_fartsgrense)
+    route_leg_data(;start, slutt, default_fartsgrense)
 end
 
 """

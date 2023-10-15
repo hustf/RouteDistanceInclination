@@ -1,5 +1,5 @@
 ########################################################
-# This tests on the public api level (route_data)
+# This tests on the public api level (route_leg_data)
 # and also on a level beneath the public api level.
 #
 # It also extends the exported plot definition 
@@ -89,7 +89,7 @@ ea1 = 38751
 no1 = 6946371
 no2 = 6946328
 ea2 = 38786
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 @test all(d[:speed_limitation] .== 40.0)
 
 
@@ -150,7 +150,7 @@ for (start, stop) in zip(rws[1: (end - 1)], rws[2:end])
     na2, ea2, no2 = M[stop, :]
     print("\n", lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
     println(link_split_key(ea1, no1, ea2, no2))
-    d = route_data(ea1, no1, ea2, no2)
+    d = route_leg_data(ea1, no1, ea2, no2)
     println("   Progression end: ", d[:progression][end])
 end 
 
@@ -191,7 +191,7 @@ na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
@@ -201,7 +201,7 @@ na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
@@ -211,7 +211,7 @@ na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
@@ -221,7 +221,7 @@ na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 # Very short geometry
@@ -230,7 +230,7 @@ na1, ea1, no1 = M[start, :]
 na2, ea2, no2 = M[stop, :]
 print(lpad("$start $stop", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 
@@ -243,7 +243,7 @@ ea2 = 27804
 no2 = 6932152
 print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
 
 # Zoom in on hilltop
@@ -255,5 +255,5 @@ ea2 = 25589
 no2 = 6939427
 print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)

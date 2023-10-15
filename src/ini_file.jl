@@ -37,39 +37,45 @@ function _prepare_init_file_configuration(io)
     # Removed C:\Users\frohu_h4g8g6y\RouteSlopeDistance.ini
     #
     # For testing purpose
-    _add_link_split(conta, "(1 1)-(5 5)", "2 2", also_reverse = false)
-    _add_link_split(conta, "(2 2)-(5 5)", "3 3", also_reverse = false)
-    _add_link_split(conta, "(3 3)-(5 5)", "4 4", also_reverse = false)
-    # Notøy <-> Røyra øst
-    _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585", also_reverse = true)
-    # Ulstein vgs. <-> Støylesvingen
-    _add_link_split(conta, "(28961 6945248)-(28275 6945289)", "28684 6945112", also_reverse = true)
-    # Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.
-    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", also_reverse = false)
-    # Botnen <-> Garneskrysset. 
-    _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", also_reverse = true)
-    # Haddal nord -> Garneskrysset: Force right side roundabout
-    _add_link_split(conta, "(27280 6939081)-(26449 6940130)", "26568 6940237", also_reverse = false)
-    # Garneskrysset -> Haddal nord: Force turn going out
-    _add_link_split(conta, "(26449 6940130)-(27280 6939081)", "26461 6940151", also_reverse = false)
-    # Myrvåglomma <-> Myrvåg
-    _add_link_split(conta, "(23911 6938921)-(23412 6939348)", "23732 6938944", also_reverse = true)
-    # Røyra vest <-> Frøystadvåg
-    _add_link_split(conta, "(19605 6944608)-(19495 6945400)", "19332 6945107", also_reverse = true)
-    # Frøystadvåg <-> Frøystadkrysset
-    _add_link_split(conta, "(19495 6945400)-(19646 6945703)", "19741 6945636", also_reverse = true)
-    # Hareid ungdomsskule fv. 61 -> Hareid bussterminal
-    _add_link_split(conta, "(36533 6947582)-(36976 6947659)", "36942 6947647", also_reverse = false)
-    # Furene -> Hovdevatnet 
-    _add_link_split(conta, "(34704 6925611)-(34518 6927170)", "34922 6925892", also_reverse = true)
-    _add_link_split(conta, "(34704 6925611)-(34922 6925892)", "35020 6925801", also_reverse = false)
-    # Sørheim <-> Eiksundbrua
-    _add_link_split(conta, "(32452 6930544)-(27963 6935576)", "28970 6931629", also_reverse = true)
-    _add_link_split(conta, "(28970 6931629)-(27963 6935576)", "27809 6934212", also_reverse = true)
-    _add_link_split(conta, "(27809 6934212)-(27963 6935576)", "28133 6935541", also_reverse = true)
-     
-    #     _add_link_split(conta, "", "", also_reverse = true)
-    # 
+    _add_link_split(conta, "(1 1)-(5 5)", "2 2", "Description1", also_reverse = false)
+    _add_link_split(conta, "(2 2)-(5 5)", "3 3", "Description2", also_reverse = false)
+    _add_link_split(conta, "(3 3)-(5 5)", "4 4",  "Description3", also_reverse = false)
+    _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585", 
+        "Notøy <-> Røyra øst", also_reverse = true)
+    _add_link_split(conta, "(27268 6946628)-(27394 6946170)", "27188 6946505", 
+        "Bugarden vest -> Ulsteinvik Bakkegata", also_reverse = false)
+    _add_link_split(conta, "(28961 6945248)-(28275 6945289)", "28684 6945112", 
+        "Ulstein vgs. <-> Støylesvingen", also_reverse = true)
+    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", 
+        "Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.", also_reverse = false)
+    _add_link_split(conta, "(27714 6945607)-(27262 6945774)", "27123 6945900", 
+        "Ulsteinvik skysstasjon -> Holsekerdalen: Force front street", also_reverse = false)
+    _add_link_split(conta, "(26714 6946197)-(25933 6945968)", "25867 6945942", 
+        "Ulstein verft - turn in yard at arrival", also_reverse = false)
+    _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", 
+        "Botnen <-> Garneskrysset. ", also_reverse = true)
+    _add_link_split(conta, "(27280 6939081)-(26449 6940130)", "26568 6940237", 
+        "Haddal nord -> Garneskrysset: Force right side roundabout", also_reverse = false)
+    _add_link_split(conta, "(26449 6940130)-(27280 6939081)", "26461 6940151", 
+        "Garneskrysset -> Haddal nord: Force turn going out", also_reverse = false)
+    _add_link_split(conta, "(23911 6938921)-(23412 6939348)", "23732 6938944", 
+        "Myrvåglomma <-> Myrvåg", also_reverse = true)
+    _add_link_split(conta, "(19605 6944608)-(19495 6945400)", "19332 6945107", 
+        "Røyra vest <-> Frøystadvåg", also_reverse = true)
+    _add_link_split(conta, "(19495 6945400)-(19646 6945703)", "19741 6945636", 
+        "Frøystadvåg <-> Frøystadkrysset", also_reverse = true)
+    _add_link_split(conta, "(36533 6947582)-(36976 6947659)", "36942 6947647", 
+        "Hareid ungdomsskule fv. 61 -> Hareid bussterminal", also_reverse = false)
+    _add_link_split(conta, "(34704 6925611)-(34518 6927170)", "34922 6925892", 
+        "Furene -> Hovdevatnet ", also_reverse = true)
+    _add_link_split(conta, "(34704 6925611)-(34922 6925892)", "35020 6925801", 
+        "", also_reverse = false)
+    _add_link_split(conta, "(32452 6930544)-(27963 6935576)", "28970 6931629", 
+        "Sørheim <-> Eiksundbrua 1", also_reverse = true)
+    _add_link_split(conta, "(28970 6931629)-(27963 6935576)", "27809 6934212", 
+        "Sørheim <-> Eiksundbrua 2", also_reverse = true)
+    _add_link_split(conta, "(27809 6934212)-(27963 6935576)", "28133 6935541", 
+        "Sørheim <-> Eiksundbrua 3", also_reverse = true)
     #########################
     # Coordinate replacements
     #########################
@@ -86,6 +92,10 @@ function _prepare_init_file_configuration(io)
     # Hareid bussterminal
     set(conta, "coordinates replacement", "Out of 36976 6947659",  "36947 6947667")
     set(conta, "coordinates replacement", "In to 36976 6947659", "36943 6947661")
+    # Ulstein verft
+    set(conta, "coordinates replacement", "Out of 25885 6945943",  "25933 6945968")
+    set(conta, "coordinates replacement", "In to 25885 6945943", "25933 6945968")
+    
 
     # To file..
     println(io, conta)
@@ -178,20 +188,22 @@ _get_fnam_but_dont_create_file() =  joinpath(homedir(), "RouteSlopeDistance.ini"
 
 
 """
-    _add_link_split(conta, keypair::String, keycoordinate; also_reverse = false)
+    _add_link_split(conta, keypair::String, keycoordinate::String, description::String; also_reverse = false)
     ---> Vector{Float64}
+
+`description` is a comment and will not be read by `get_config_value`
 
 # Example
 ```
-julia> _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585"; also_reverse = true)
+julia> _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585", "Notøy <-> Røyra øst"; also_reverse = true)
 ```
 """
-function _add_link_split(conta, keypair::String, keycoordinate::String; also_reverse = false)
-    set(conta, "link split", keypair, keycoordinate)
+function _add_link_split(conta, keypair::String, keycoordinate::String, description::String; also_reverse = false)
+    set(conta, "link split", keypair, keycoordinate * " # " * description)
     if also_reverse
         fromkey, tokey = split(keypair, '-')
         kpr = tokey * '-' * fromkey
-        set(conta, "link split", kpr, keycoordinate)
+        set(conta, "link split", kpr, keycoordinate * " # " * description)
     end
     nothing
 end

@@ -99,7 +99,7 @@ ea2 = 25589
 no2 = 6939427
 print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
-d = route_data(ea1, no1, ea2, no2)
+d = route_leg_data(ea1, no1, ea2, no2)
 mls = d[:multi_linestring]
 s = d[:progression]
 _, _, z = unique_unnested_coordinates_of_multiline_string(mls)

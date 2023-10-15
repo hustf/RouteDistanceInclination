@@ -1,4 +1,4 @@
-# This file has functions for memoization of route_data calls.
+# This file has functions for memoization of route_leg_data calls.
 # The file is binary, call `delete_memoization_file()`
 # if old results are invalidated.
 

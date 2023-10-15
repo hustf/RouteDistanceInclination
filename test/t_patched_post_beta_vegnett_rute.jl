@@ -121,7 +121,6 @@ mls, reversed = extract_multi_linestrings(q)
 @test length(mls) == 12
 @test mls isa Vector{Vector{Tuple{Float64, Float64, Float64}}}
 
-
 # Test a segment with a replaced coordinate, Holsekerdalen -> Ulsteinvik skysstasjon
 start = 18
 stop = 19
