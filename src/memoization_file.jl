@@ -18,7 +18,7 @@ end
 
 
 """
-    delete_memoized_pair(key)
+    delete_memoized_pair(key; also_reverse = false)
     ---> Nothing
 
 This can be useful if a stored key is corrupted, or route is revised. Otherwise, use `delete_memoization_file`.
@@ -36,7 +36,7 @@ julia> delete_memoized_pair("(33142 6946489)-(32852 6946449)")
 Nothing removed from C:\\Users\\f\\RouteSlopeDistance.jls : Unknown key. 
 ```
 """
-function delete_memoized_pair(key) 
+function delete_memoized_pair(key; also_reverse = false)
     d = read_memoized_dict()
     wasvalue = pop!(d, key, Dict())
     fna = _get_memoization_filename_but_dont_create_file()
@@ -44,7 +44,12 @@ function delete_memoized_pair(key)
         println("Route data $key removed from $fna")
         serialize(fna, d)
     else
-        println("Nothing removed from $fna : Unknown key.")
+        println("Nothing removed from $fna : Unknown key $key.")
+    end
+    if also_reverse
+        parts = split(key, '-')
+        reversekey = parts[2] * "-" * parts[1]
+        delete_memoized_pair(reversekey; also_reverse = false)
     end
     nothing
 end

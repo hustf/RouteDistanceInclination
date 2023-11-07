@@ -51,7 +51,7 @@ end
 
 https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/openapi/#/Vegnett/post_beta_vegnett_rute
 """
-function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
+function post_beta_vegnett_rute(easting1, northing1, easting2, northing2; omkrets::Int64 = 100)
     # "Gyldige verdier for 'typeveg' er [kanalisertveg, enkelbilveg, rampe, rundkjøring, 
     # bilferje, passasjerferje, gangogsykkelveg, sykkelveg, gangveg, gågate, fortau, trapp, 
     # gangfelt, gatetun, traktorveg, sti, annet]
@@ -61,12 +61,12 @@ function post_beta_vegnett_rute(easting1, northing1, easting2, northing2)
         :start                  => "$easting1 , $northing1"
         :trafikantgruppe        => "K"
         :maks_avstand  => 10
-        :omkrets => 100
         :detaljerte_lenker      => true
         :behold_trafikantgruppe => true
         :slutt                  => "$easting2 , $northing2"
         :tidspunkt              => "2023-07-28"
         ])
+    push!(body, :omkrets => omkrets)
     # Make the call, get a json object
    nvdb_request("beta/vegnett/rute", "POST"; body)[1]
 end

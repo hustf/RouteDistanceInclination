@@ -26,6 +26,9 @@ function _prepare_init_file_configuration(io)
     #############
     # Link splits 
     #############
+    # Link splits are done in `patched_post_beta_vegnett_rute`. Splits
+    # are performed first. After splitting, coordinates are replaced.
+    # Hence, refer to the "original / uncorrected" coordinates in keys.
     # The key is from-to coordinates. The value is inserted coordinate.
     # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding 
     # new keys. Function `link_split_key(ea1, no1, ea2, no2)` can be useful.
@@ -40,46 +43,42 @@ function _prepare_init_file_configuration(io)
     _add_link_split(conta, "(1 1)-(5 5)", "2 2", "Description1", also_reverse = false)
     _add_link_split(conta, "(2 2)-(5 5)", "3 3", "Description2", also_reverse = false)
     _add_link_split(conta, "(3 3)-(5 5)", "4 4",  "Description3", also_reverse = false)
-    _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585", 
-        "Notøy <-> Røyra øst", also_reverse = true)
-    _add_link_split(conta, "(27268 6946628)-(27394 6946170)", "27188 6946505", 
-        "Bugarden vest -> Ulsteinvik Bakkegata", also_reverse = false)
-    _add_link_split(conta, "(28961 6945248)-(28275 6945289)", "28684 6945112", 
-        "Ulstein vgs. <-> Støylesvingen", also_reverse = true)
-    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", 
-        "Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.", also_reverse = false)
-    _add_link_split(conta, "(27714 6945607)-(27262 6945774)", "27123 6945900", 
-        "Ulsteinvik skysstasjon -> Holsekerdalen: Force front street", also_reverse = false)
+    # copy-paste template
+    #     _add_link_split(conta, "", "", 
+    # "", also_reverse = true)
+
+    _add_link_split(conta, "(26223 6947530)-(26241 6947561)", "26263 6947547", 
+        "Skeide Ulstein skule <-> Ulstein skule", also_reverse = true)
     _add_link_split(conta, "(26714 6946197)-(25933 6945968)", "25867 6945942", 
         "Ulstein verft - turn in yard at arrival", also_reverse = false)
-    _add_link_split(conta, "(26807 6941534)-(26449 6940130)", "26141 6941016", 
-        "Botnen <-> Garneskrysset. ", also_reverse = true)
-    _add_link_split(conta, "(27280 6939081)-(26449 6940130)", "26568 6940237", 
-        "Haddal nord -> Garneskrysset: Force right side roundabout", also_reverse = false)
     _add_link_split(conta, "(26449 6940130)-(27280 6939081)", "26461 6940151", 
         "Garneskrysset -> Haddal nord: Force turn going out", also_reverse = false)
-    _add_link_split(conta, "(23911 6938921)-(23412 6939348)", "23732 6938944", 
-        "Myrvåglomma <-> Myrvåg", also_reverse = true)
-    _add_link_split(conta, "(19605 6944608)-(19495 6945400)", "19332 6945107", 
-        "Røyra vest <-> Frøystadvåg", also_reverse = true)
-    _add_link_split(conta, "(19495 6945400)-(19646 6945703)", "19741 6945636", 
-        "Frøystadvåg <-> Frøystadkrysset", also_reverse = true)
-    _add_link_split(conta, "(36533 6947582)-(36976 6947659)", "36942 6947647", 
-        "Hareid ungdomsskule fv. 61 -> Hareid bussterminal", also_reverse = false)
-    _add_link_split(conta, "(34704 6925611)-(34518 6927170)", "34922 6925892", 
-        "Furene -> Hovdevatnet ", also_reverse = true)
-    _add_link_split(conta, "(34704 6925611)-(34922 6925892)", "35020 6925801", 
-        "", also_reverse = false)
-    _add_link_split(conta, "(32452 6930544)-(27963 6935576)", "28970 6931629", 
-        "Sørheim <-> Eiksundbrua 1", also_reverse = true)
-    _add_link_split(conta, "(28970 6931629)-(27963 6935576)", "27809 6934212", 
-        "Sørheim <-> Eiksundbrua 2", also_reverse = true)
-    _add_link_split(conta, "(27809 6934212)-(27963 6935576)", "28133 6935541", 
-        "Sørheim <-> Eiksundbrua 3", also_reverse = true)
+    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", 
+        "Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.", also_reverse = false)
+    _add_link_split(conta, "(33196 6941267)-(34455 6946162)", "34636 6944658", 
+        "Kvammen <-> Kaldhol", also_reverse = true)
+    _add_link_split(conta, "(34455 6946162)-(33729 6946682)", "34048 6946883", 
+        "Kaldhol <-> Bigsetkrysset", also_reverse = true)
+    _add_link_split(conta, "(33142 6946489)-(35590 6942991)", "34048 6946883", 
+        "Byggeli <-> Ulset", also_reverse = true)
+    _add_link_split(conta, "(36307 6947475)-(35983 6947673)", "36373 6947595", 
+        "Hareid ungdomsskule  -> Holstad", also_reverse = false)
+    _add_link_split(conta, "(22262 6935850)-(22266 6936088)", "22394 6936132", 
+        "Leikong <-> Leikong kyrkje", also_reverse = true)
+    _add_link_split(conta, "(22243 6932325)-(22262 6935850)", "23393 6934807", 
+        "Voldneset <-> Leikong", also_reverse = true)
+    _add_link_split(conta, "(16245 6947281)-(16074 6947525)", "16182 6947395", 
+        "Fosnavåg terminal <-> Fosnavåg sparebank", also_reverse = true)
+    _add_link_split(conta, "(35335 6926025)-(36586 6926215)", "36610 6926461", 
+        "Åsen <-> Ørsta Volda lufthamn", also_reverse = true)
+        # 
+        # 
     #########################
     # Coordinate replacements
     #########################
-    # Merk at "In to" og "Out of" ikke gir alltid gir nok mening.
+    # Coordinate replacements are done in `patched_post_beta_vegnett_rute`, after
+    # splits of requests.
+    #
     # Ulsteinvik skysstasjon         Error: 4042  IKKE_FUNNET_SLUTTPUNKT 
     set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
     set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
@@ -95,9 +94,65 @@ function _prepare_init_file_configuration(io)
     # Ulstein verft
     set(conta, "coordinates replacement", "Out of 25885 6945943",  "25933 6945968")
     set(conta, "coordinates replacement", "In to 25885 6945943", "25933 6945968")
+    # Reiten
+    set(conta, "coordinates replacement", "Out of 26670 6946408",  "26677 6946389")
+    set(conta, "coordinates replacement", "In to 26670 6946408", "26677 6946389")
+    # Leikong
+    set(conta, "coordinates replacement", "Out of 22262 6935850",  "22272 6935836")
+    # Leikong kyrkje
+    set(conta, "coordinates replacement", "Out of 22266 6936088",  "22267 6936067")
+    set(conta, "coordinates replacement", "In to 22266 6936088",  "22267 6936067")
+    # Skoge
+    set(conta, "coordinates replacement", "Out of 17433 6933394",  "17437 6933383")
+    set(conta, "coordinates replacement", "In to 17433 6933394",  "17437 6933383")
+    # Gursken oppvekssenter
+    set(conta, "coordinates replacement", "Out of 15033 6933457",  "15020 6933460")
+    set(conta, "coordinates replacement", "In to 15033 6933457",  "15020 6933460")
+    # Grønnevik
+    set(conta, "coordinates replacement", "Out of 11193 6931632",  "11211 6931634")
+    set(conta, "coordinates replacement", "In to 11193 6931632",  "11211 6931634")
+    # Voldnes 
+    set(conta, "coordinates replacement", "Out of 22243 6932325",  "22257 6932322")
+    set(conta, "coordinates replacement", "In to 22243 6932325",  "22257 6932322")
+    # Volda rutebilstasjon
+    set(conta, "coordinates replacement", "Out of 35643 6922428",  "35644 6922407")
+    set(conta, "coordinates replacement", "In to 35643 6922428",  "35653 6922468")
+    # Ørsta Volda lufthamn
+    set(conta, "coordinates replacement", "Out of 36586 6926215",  "36564 6926161")
+    set(conta, "coordinates replacement", "In to 36586 6926215",  "36652 6926215")
+    # Moa trafikkterminal
+    set(conta, "coordinates replacement", "Out of 54938 6956088",  "54923 6956123")
+    set(conta, "coordinates replacement", "In to 54938 6956088",  "54967 6956088")
+    # Giske kyrkje 39948 6961715      (39600 6962181)-(39947 6961699)
+    #set()
     
-
-    # To file..
+    #=
+    # Leine ytre
+    set(conta, "coordinates replacement", "Out of 18365 6948288",  "18357 6948270")
+    set(conta, "coordinates replacement", "In to 18365 6948288",  "18357 6948270")
+    # Elsebøvegen
+    set(conta, "coordinates replacement", "Out of 17690 6946368",  "17685 6946350")
+    set(conta, "coordinates replacement", "In to 17690 6946368",  "17685 6946350")
+    # Eggesbønes
+    set(conta, "coordinates replacement", "Out of 16088 6945709",  "16103 6945675")
+    set(conta, "coordinates replacement", "In to 16088 6945709",  "16103 6945675")
+    # Herøy kyrkje
+    set(conta, "coordinates replacement", "Out of 16166 6946661",  "16145 6946644")
+    set(conta, "coordinates replacement", "In to 16166 6946661",  "16145 6946644")
+    # Fosnavåg sparebank
+    set(conta, "coordinates replacement", "Out of 16245 6947281",  "16231 6947266")
+    set(conta, "coordinates replacement", "In to 16245 6947281",  "16231 6947266")
+    # Fosnavåg terminal -- 16074 6947525
+    set(conta, "coordinates replacement", "In to 16074 6947525", "16045 6947534")
+    set(conta, "coordinates replacement", "Out of 16074 6947525", "16074 6947500")
+    # Goksøyr ytre
+    set(conta, "coordinates replacement", "In to 16668 6954396", "16654 6954386")
+    set(conta, "coordinates replacement", "Out of 16668 6954396", "16654 6954386")
+    # Goksøyr snuplass
+    set(conta, "coordinates replacement", "In to 16357 6954906", "16344 6954890")
+    set(conta, "coordinates replacement", "Out of 16357 6954906", "16344 6954890")
+    =#
+    # To file.. 
     println(io, conta)
 end 
 
@@ -199,6 +254,11 @@ julia> _add_link_split(conta, "(19429 6943497)-(19922 6944583)", "20160 6944585"
 ```
 """
 function _add_link_split(conta, keypair::String, keycoordinate::String, description::String; also_reverse = false)
+    v_assert = split(keypair, [' ', '-'])
+    @assert ! isnothing(tryparse(Int, strip(v_assert[1], ['(', ')'])))    keypair
+    @assert ! isnothing(tryparse(Int, strip(v_assert[2], ['(', ')'])))    keypair
+    @assert ! isnothing(tryparse(Int, strip(v_assert[3], ['(', ')'])))    keypair
+    @assert ! isnothing(tryparse(Int, strip(v_assert[4], ['(', ')'])))    keypair
     set(conta, "link split", keypair, keycoordinate * " # " * description)
     if also_reverse
         fromkey, tokey = split(keypair, '-')
@@ -207,3 +267,18 @@ function _add_link_split(conta, keypair::String, keycoordinate::String, descript
     end
     nothing
 end
+#=
+function _add_coord_replacement(conta, old_new_pair::Pair{Tuple{Int64, Int64}, Tuple{Int64, Int64}}, description::String; also_reverse = false)
+    #set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
+    #set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
+    @assert ! isnothing(tryparse(Int, strip(split(keypair, ' ')[1], ['(', ')'])))
+    @assert ! isnothing(tryparse(Int, strip(split(keypair, ' ')[2], ['(', ')'])))
+    set(conta, "coordinates replacement", "In to " * keypair, keycoordinate * " # " * description)
+    if also_reverse
+        fromkey, tokey = split(keypair, '-')
+        kpr = tokey * '-' * fromkey
+        set(conta, "link split", kpr, keycoordinate * " # " * description)
+    end
+    nothing
+end
+=#

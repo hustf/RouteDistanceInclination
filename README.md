@@ -15,10 +15,10 @@ There's also a plot definition, `plot_elevation_and_slope_vs_progression`, uses 
 For unsupported data endpoints, e.g. traffic counts, road class or surface, adapt based on `endpoints.jl`.
 
 ## Data source
-Raw data is fetched from [Norsk Vegdatabase](https://nvdb.atlas.vegvesen.no/). Data can be used under [public license] (https://data.norge.no/nlod/no/1.0).
+Raw data is fetched from [Norsk Vegdatabase](https://nvdb.atlas.vegvesen.no/). Data can be used under [public license](https://data.norge.no/nlod/no/1.0).
 
-    Expert web interface: [vegkart.no/](https://vegkart.atlas.vegvesen.no/)
-    Expert route patching (put patches in .ini file): [nvdb-vegdata.github.io/nvdb-visrute/STM/](https://nvdb-vegdata.github.io/nvdb-visrute/STM/)
+Expert web interface: [vegkart.no/](https://vegkart.atlas.vegvesen.no/)
+Expert route patching (put patches in .ini file): [nvdb-vegdata.github.io/nvdb-visrute/STM/](https://nvdb-vegdata.github.io/nvdb-visrute/STM/)
 
 To reduce the number of web API calls, the package serializes results in a binary file, until you `delete_memoization_file()`. 
 

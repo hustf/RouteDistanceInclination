@@ -62,8 +62,23 @@ end
 function build_patches!(q::Quilt)
     for (ea1, no1, ea2, no2) in q.fromtos
         o = post_beta_vegnett_rute(ea1, no1, ea2, no2)
-        @assert !isempty(o) 
-        @assert ! iszero(o.metadata.antall) "$(extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)[1])"
+        @assert !isempty(o)
+        # Before failing, we'll increase 'omkrets' in steps.
+        if iszero(o.metadata.antall)
+            min_omkrets = 150 # Double default value
+            max_omkrets = 2000 # Perhaps slow or unpredictable
+            for x in range(min_omkrets, max_omkrets, length = 18)
+                omkrets = Int64(round(x))
+                printstyled("Retrying route request $(link_split_key(ea1, no1, ea2, no2)) with larger 'omkrets' = $omkrets \n", color =:176)
+                o = post_beta_vegnett_rute(ea1, no1, ea2, no2; omkrets)
+                @assert !isempty(o)
+                ! iszero(o.metadata.antall) && break
+            end
+        end
+        if iszero(o.metadata.antall)
+            msg = extract_prefixed_vegsystemreferanse(o, ea1, no1, ea2, no2)[1]
+            @assert ! iszero(o.metadata.antall) "$msg"
+        end
         push!(q.patches, o)
     end
 end
