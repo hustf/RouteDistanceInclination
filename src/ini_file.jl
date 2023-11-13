@@ -1,6 +1,7 @@
 # Also see 'exported.jl'.
 
 function _prepare_init_file_configuration(io)
+    printstyled(stderr, "VersionLocal 5", color=:176)
     # Add a comment at top (IniFile.jl has no functions for comments)
     msg = """
         # Configuration file for 'RouteSlopeDistance'.
@@ -11,7 +12,7 @@ function _prepare_init_file_configuration(io)
         # to similar APIs in this init file. Feel free to experiment with other countries
         # or authorities (unless their licences says otherwise).
         #
-        # The default base url is the dev environment, which may not always be available. 
+        # The default base url is the dev environment, which may not always be available.
         # Ref. https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/
         """
     println(io, msg)
@@ -24,13 +25,13 @@ function _prepare_init_file_configuration(io)
     #
 
     #############
-    # Link splits 
+    # Link splits
     #############
     # Link splits are done in `patched_post_beta_vegnett_rute`. Splits
     # are performed first. After splitting, coordinates are replaced.
     # Hence, refer to the "original / uncorrected" coordinates in keys.
     # The key is from-to coordinates. The value is inserted coordinate.
-    # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding 
+    # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding
     # new keys. Function `link_split_key(ea1, no1, ea2, no2)` can be useful.
     #
     # You can edit the init file manually. If you revise here instead,
@@ -44,45 +45,78 @@ function _prepare_init_file_configuration(io)
     _add_link_split(conta, "(2 2)-(5 5)", "3 3", "Description2", also_reverse = false)
     _add_link_split(conta, "(3 3)-(5 5)", "4 4",  "Description3", also_reverse = false)
     # copy-paste template
-    #     _add_link_split(conta, "", "", 
+    #     _add_link_split(conta, "", "",
     # "", also_reverse = true)
 
-    _add_link_split(conta, "(26223 6947530)-(26241 6947561)", "26263 6947547", 
+    _add_link_split(conta, "(26223 6947530)-(26241 6947561)", "26263 6947547",
         "Skeide Ulstein skule <-> Ulstein skule", also_reverse = true)
-    _add_link_split(conta, "(26714 6946197)-(25933 6945968)", "25867 6945942", 
+    _add_link_split(conta, "(26714 6946197)-(25933 6945968)", "25867 6945942",
         "Ulstein verft - turn in yard at arrival", also_reverse = false)
-    _add_link_split(conta, "(26449 6940130)-(27280 6939081)", "26461 6940151", 
+    _add_link_split(conta, "(26449 6940130)-(27280 6939081)", "26461 6940151",
         "Garneskrysset -> Haddal nord: Force turn going out", also_reverse = false)
-    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576", 
+    _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576",
         "Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.", also_reverse = false)
-    _add_link_split(conta, "(33196 6941267)-(34455 6946162)", "34636 6944658", 
+    _add_link_split(conta, "(33196 6941267)-(34455 6946162)", "34636 6944658",
         "Kvammen <-> Kaldhol", also_reverse = true)
-    _add_link_split(conta, "(34455 6946162)-(33729 6946682)", "34048 6946883", 
+    _add_link_split(conta, "(34455 6946162)-(33729 6946682)", "34048 6946883",
         "Kaldhol <-> Bigsetkrysset", also_reverse = true)
-    _add_link_split(conta, "(33142 6946489)-(35590 6942991)", "34048 6946883", 
+    _add_link_split(conta, "(33142 6946489)-(35590 6942991)", "34048 6946883",
         "Byggeli <-> Ulset", also_reverse = true)
-    _add_link_split(conta, "(36307 6947475)-(35983 6947673)", "36373 6947595", 
+    _add_link_split(conta, "(36307 6947475)-(35983 6947673)", "36373 6947595",
         "Hareid ungdomsskule  -> Holstad", also_reverse = false)
-    _add_link_split(conta, "(22262 6935850)-(22266 6936088)", "22394 6936132", 
+    _add_link_split(conta, "(22262 6935850)-(22266 6936088)", "22394 6936132",
         "Leikong <-> Leikong kyrkje", also_reverse = true)
-    _add_link_split(conta, "(22243 6932325)-(22262 6935850)", "23393 6934807", 
+    _add_link_split(conta, "(22243 6932325)-(22262 6935850)", "23393 6934807",
         "Voldneset <-> Leikong", also_reverse = true)
-    _add_link_split(conta, "(16245 6947281)-(16074 6947525)", "16182 6947395", 
+    _add_link_split(conta, "(16245 6947281)-(16074 6947525)", "16182 6947395",
         "Fosnavåg terminal <-> Fosnavåg sparebank", also_reverse = true)
-    _add_link_split(conta, "(35335 6926025)-(36586 6926215)", "36610 6926461", 
+    _add_link_split(conta, "(35335 6926025)-(36586 6926215)", "36610 6926461",
         "Åsen <-> Ørsta Volda lufthamn", also_reverse = true)
-        # 
-        # 
+    _add_link_split(conta, "(35643 6922428)-(36193 6922438)", "35774 6922214",
+        "Volda rutebilstasjon <-> Volda ungdomsskule", also_reverse = true)
+    _add_link_split(conta, "(36807 6922760)-(36907 6922492)", "35774 6922214",
+        "Volda sjukehus <-> Studentheimane", also_reverse = true)
+    # TODO consider solution
+    # This one would require special endpoint settings. Not very common. Ignore long route around it.
+
+    # Similar solution as for ferries?
+    # E.g. Koparneset ferjekai                         Årvika ferjekai                             (13869 6928277)-(13742 6930773)
+    #
+    # Could we do this with coordinate replacements? Out of Årvika => Koparneset. Out of Raudemyrvegen => Brenslene.
+    # Hm...
+    #
     #########################
     # Coordinate replacements
     #########################
     # Coordinate replacements are done in `patched_post_beta_vegnett_rute`, after
     # splits of requests.
-    #
-    # Ulsteinvik skysstasjon         Error: 4042  IKKE_FUNNET_SLUTTPUNKT 
-    set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
-    set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
-    # Garneskrysset 
+
+    _add_coord_replacement(conta, (27262, 6945774) => (27265, 6945717), "Ulsteinvik skysstasjon", alternative_out = (27224, 6945781))
+    _add_coord_replacement(conta, (36976, 6947659) => (36943, 6947662), "Hareid bussterminal", alternative_out = (36947, 6947667))
+    _add_coord_replacement(conta, (26449, 6940130) => (26453, 6940120),  "Garneskrysset")
+    _add_coord_replacement(conta, (16064, 6947515) => (16048, 6947536),  "Fosnavåg terminal", alternative_out = (16075, 6947499))
+    _add_coord_replacement(conta, (25885, 6945943) => (25933, 6945968),  "Ulstein verft")
+    _add_coord_replacement(conta, (26670, 6946408) => (26677, 6946389),  "Reiten")
+    _add_coord_replacement(conta, (22266, 6936088) => (22267, 6936067),  "Leikong kyrkje")
+    _add_coord_replacement(conta, (17433, 6933394) => (17437, 6933383),  "Skoge")
+    _add_coord_replacement(conta, (15033, 6933457) => (15020, 6933460),  "Gursken oppvekssenter")
+    _add_coord_replacement(conta, (11193, 6931632) => (11211, 6931634),  "Grønnevik")
+    _add_coord_replacement(conta, (22243, 6932325) => (22257, 6932322),  "Voldnes")
+    _add_coord_replacement(conta, (35643, 6922428) => (35653, 6922468),  "Volda rutebilstasjon", alternative_out = (35644, 6922407))
+    _add_coord_replacement(conta, (36586, 6926215) => (36652, 6926215),  "Ørsta Volda lufthamn", alternative_out = (36564, 6926161))
+    _add_coord_replacement(conta, (54938, 6956088) => (54967, 6956088),  "Moa trafikkterminal", alternative_out = (54923, 6956123))
+    _add_coord_replacement(conta, (11193, 6931632) => (11198, 6931667),  "Grønnevik")
+    # This is a trick - there is no public road between Raudemyrvegen and Brenslene
+    _add_coord_replacement(conta, (37168, 6923045) => (37168, 6923045),  "Raudemyrvegen", alternative_out = (37122, 6923051))
+    # This is a trick - there is no road across fjords
+    _add_coord_replacement(conta, (13869, 6928277) => (13869, 6928277),  "Koparneset ferjekai", alternative_out = (13742, 6930773))
+
+    #=throw("Ouch")
+
+ #    Ulsteinvik skysstasjon
+ #   set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
+ #   set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
+    # Garneskrysset
     set(conta, "coordinates replacement", "In to 26449 6940130", "26453 6940120")
     set(conta, "coordinates replacement", "Out of 26449 6940130", "26453 6940120")
     # Fosnavåg terminal
@@ -108,10 +142,8 @@ function _prepare_init_file_configuration(io)
     # Gursken oppvekssenter
     set(conta, "coordinates replacement", "Out of 15033 6933457",  "15020 6933460")
     set(conta, "coordinates replacement", "In to 15033 6933457",  "15020 6933460")
-    # Grønnevik
-    set(conta, "coordinates replacement", "Out of 11193 6931632",  "11211 6931634")
-    set(conta, "coordinates replacement", "In to 11193 6931632",  "11211 6931634")
-    # Voldnes 
+
+    # Voldnes
     set(conta, "coordinates replacement", "Out of 22243 6932325",  "22257 6932322")
     set(conta, "coordinates replacement", "In to 22243 6932325",  "22257 6932322")
     # Volda rutebilstasjon
@@ -125,7 +157,7 @@ function _prepare_init_file_configuration(io)
     set(conta, "coordinates replacement", "In to 54938 6956088",  "54967 6956088")
     # Giske kyrkje 39948 6961715      (39600 6962181)-(39947 6961699)
     #set()
-    
+
     #=
     # Leine ytre
     set(conta, "coordinates replacement", "Out of 18365 6948288",  "18357 6948270")
@@ -152,9 +184,10 @@ function _prepare_init_file_configuration(io)
     set(conta, "coordinates replacement", "In to 16357 6954906", "16344 6954890")
     set(conta, "coordinates replacement", "Out of 16357 6954906", "16344 6954890")
     =#
-    # To file.. 
+    =#
+    # To file..
     println(io, conta)
-end 
+end
 
 
 """
@@ -167,7 +200,7 @@ function get_config_value(sect::String, key::String; nothing_if_not_found = fals
     fnam = _get_ini_fnam()
     ini = read(Inifile(), fnam)
     if sect ∉ keys(sections(ini))
-        msg = """$sect not a section in $fnam. 
+        msg = """$sect not a section in $fnam.
         The existing are: $(keys(sections(ini))).
         If you delete the .ini file above, a new template will be generated.
         """
@@ -179,10 +212,10 @@ function get_config_value(sect::String, key::String; nothing_if_not_found = fals
         s = get(ini, sect, key,  "")
         if s == ""
             throw(ArgumentError("""
-                $key not a key with value in section $sect of file $fnam. 
-            
+                $key not a key with value in section $sect of file $fnam.
+
                 Example:
-                [user]                          # section  
+                [user]                          # section
                 user_name     = slartibartfast  # key and value
                 perceived_age = 5
 
@@ -193,7 +226,7 @@ function get_config_value(sect::String, key::String; nothing_if_not_found = fals
         s
     end
 end
-function get_config_value(sect, key, type::DataType; nothing_if_not_found = false) 
+function get_config_value(sect, key, type::DataType; nothing_if_not_found = false)
     st = get_config_value(sect, key; nothing_if_not_found)
     isnothing(st) && return nothing
     tryparse(type, st)
@@ -203,19 +236,19 @@ function get_config_value(sect, key, ::Type{Tuple{Float64, Float64}}; nothing_if
     st = get_config_value(sect, key; nothing_if_not_found)
     isnothing(st) && return nothing
     (tryparse(Float64, split(st, ' ')[1]),     tryparse(Float64, split(st, ' ')[2]))
-end 
+end
 function get_config_value(sect, key, ::Type{Tuple{Int64, Int64}}; nothing_if_not_found = false)
     st = get_config_value(sect, key; nothing_if_not_found)
     isnothing(st) && return nothing
     (tryparse(Int64, split(st, ' ')[1]),     tryparse(Int64, split(st, ' ')[2]))
-end 
+end
 
 
 
 "delete_init_file()"
 function delete_init_file()
     fna = _get_fnam_but_dont_create_file()
-    if isfile(fna) 
+    if isfile(fna)
         rm(fna)
         println("Removed $fna")
     else
@@ -267,18 +300,36 @@ function _add_link_split(conta, keypair::String, keycoordinate::String, descript
     end
     nothing
 end
-#=
-function _add_coord_replacement(conta, old_new_pair::Pair{Tuple{Int64, Int64}, Tuple{Int64, Int64}}, description::String; also_reverse = false)
-    #set(conta, "coordinates replacement", "In to 27262 6945774", "27265 6945717")
-    #set(conta, "coordinates replacement", "Out of 27262 6945774", "27224 6945781")
-    @assert ! isnothing(tryparse(Int, strip(split(keypair, ' ')[1], ['(', ')'])))
-    @assert ! isnothing(tryparse(Int, strip(split(keypair, ' ')[2], ['(', ')'])))
-    set(conta, "coordinates replacement", "In to " * keypair, keycoordinate * " # " * description)
-    if also_reverse
-        fromkey, tokey = split(keypair, '-')
-        kpr = tokey * '-' * fromkey
-        set(conta, "link split", kpr, keycoordinate * " # " * description)
+
+
+"""
+    _add_coord_replacement(conta, 
+            old_new_pair::Pair{Tuple{Int64, Int64}, Tuple{Int64, Int64}}, 
+            description::String; 
+            alternative_out::Union{Nothing, Tuple{Int64, Int64}} = nothing)
+
+Add a line to the defaul .ini file. If no `alternative_out` is given, sets 
+ingoing and outgoing coordinates identical.
+
+# Example
+
+Equivalent to
+```
+set(conta, "coordinates replacement", "Out of 18365 6948288",  "18357 6948270")
+set(conta, "coordinates replacement", "In to 18365 6948288",  "18357 6948270")
+```
+"""
+function _add_coord_replacement(conta, 
+        old_new_pair::Pair{Tuple{Int64, Int64}, Tuple{Int64, Int64}}, 
+        description::String; 
+        alternative_out::Union{Nothing, Tuple{Int64, Int64}} = nothing)
+    oldc = old_new_pair[1]
+    newc = old_new_pair[2]
+    set(conta, "coordinates replacement", "In to $(oldc[1]) $(oldc[2])", "$(newc[1]) $(newc[2])  # $description")
+    if ! isnothing(alternative_out)
+        set(conta, "coordinates replacement", "Out of $(oldc[1]) $(oldc[2])", "$(alternative_out[1]) $(alternative_out[2])  # $description")
+    else
+        set(conta, "coordinates replacement", "Out of $(oldc[1]) $(oldc[2])", "$(newc[1]) $(newc[2])  # $description")
     end
     nothing
 end
-=#

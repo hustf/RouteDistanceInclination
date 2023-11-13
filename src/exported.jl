@@ -256,6 +256,8 @@ Prepare or look up entries for link splits.
 
 One could make the value (the replacement) manually from
 e.g. Norgeskart.   
+
+# TODO: Use tuple notation, with comma: (a, b)
 """
 link_split_key(ea1, no1, ea2, no2) = "($(Int(round(ea1))) $(Int(round(no1))))-($(Int(round(ea2))) $(Int(round(no2))))"
 function link_split_key(start_pt::T, end_pt::T) where T<:Tuple{Float64, Float64, Float64}
