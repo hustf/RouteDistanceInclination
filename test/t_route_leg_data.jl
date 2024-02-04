@@ -257,3 +257,16 @@ print(lpad("", 5), "  ", lpad(na1, 30), " -> ", rpad(na2, 30), " ")
 println(link_split_key(ea1, no1, ea2, no2))
 d = route_leg_data(ea1, no1, ea2, no2)
 plot_elevation_slope_speed_vs_progression(d, na1, na2)
+
+# Test a ferry journey. The start and end coordinates are replaced internally, 
+# so that start and end are effectively the same.
+# Such a request ought to return an empty dictionary.
+# Koparneset ferjekai  Årvika ferjekai (13869 6928277)-(13742 6930773)
+na1 = "Koparneset ferjekai"
+ea1 = 13869
+no1 = 6928277
+na2 = "Årvika ferjekai"
+ea2 = 13742
+no2 = 6930773
+d = route_leg_data(ea1, no1, ea2, no2)
+@test d[:progression_at_ends] == [0.0, 0.0]

@@ -212,7 +212,14 @@ function extract_split_fartsgrense(o, ref, is_reversed)
         vegsegmenter = filter(ob.vegsegmenter) do s
             is_segment_relevant(ref, s)
         end
-        @assert length(vegsegmenter) == 1 ref
+        if length(vegsegmenter) !== 1 
+            @warn "Expected just one vegsegmenter in object $ref, got $(length(vegsegmenter))"
+            @warn "     Maybe is_segment_relevant(ref, s) is too liberal?"
+            for s in vegsegmenter
+                @warn "    Is this actually relevant?" s
+                is_segment_relevant(ref, s)
+            end
+        end
         @assert hasproperty(vegsegmenter[1], :vegsystemreferanse) ref
         vsr = vegsegmenter[1].vegsystemreferanse
         @assert hasproperty(vsr, :strekning) ref
@@ -243,7 +250,7 @@ end
 function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, ref_from, is_reversed)
     if length(fartsgrenser_s) == 0
         return (NaN, 0, 0)
-    elseif length(fartsgrenser_s) == 1
+    elseif length(fartsgrenser_s) == 1 || length(unique(fartsgrenser_s)) == 1
         return 1.0, fartsgrenser_s[1], fartsgrenser_s[1]
     elseif length(fartsgrenser_s) == 2
         if fartsgrenser_s[1] == fartsgrenser_s[2]
@@ -260,10 +267,25 @@ function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, re
             end
         end
     elseif length(fartsgrenser_s) == 3
-        # Make sure two of three are equal
-        @assert fartsgrenser_s[1] == fartsgrenser_s[2] ||
+        if fartsgrenser_s[1] == fartsgrenser_s[2] ||
             fartsgrenser_s[2] == fartsgrenser_s[3] ||
-            fartsgrenser_s[1] == fartsgrenser_s[3] ref
+            fartsgrenser_s[1] == fartsgrenser_s[3]
+            #
+            # Two of three are equal, which we deal with below.
+        else
+            # We currently have three different values.
+            # We can't handle that generally, so compromise!
+            #
+            # E.g. fartsgrenser = [60, 80, 40], where 60 and 80 are partly overlapping.
+            # This could be a transitional zone, roughly 160 meters of overlapping
+            # in one direction. Be careful!
+            if fartsgrenser_s == [60, 80, 40]
+                # For our purpose, lower is conservative.
+                fartsgrenser_s[2] = 60
+            else
+                throw("This is quite rare, perhaps overlapping transitional zone. $fartsgrenser_s  $ref_from $ref_to")
+            end
+        end
         if fartsgrenser_s[1] == fartsgrenser_s[2]
             if is_reversed
                 split_after_ref_from = til_m_s[2] - ref_from
@@ -286,7 +308,7 @@ function _extract_split_fartsgrense(fra_m_s, til_m_s, fartsgrenser_s, ref_to, re
             end
         end
     else
-        throw("Unexpected length(fartsgrenser_s). Ref = $ref")
+        throw("Unexpected length(fartsgrenser_s) = $(length(fartsgrenser_s)). fartsgrenser_s = $fartsgrenser_s \n\tref_from, ref_to = $ref_from , $ref_to")
     end
 end
 

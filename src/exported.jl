@@ -14,7 +14,7 @@ input arguments to whole numbers, i.e. at a resolution of 1 m.
 For easy copy / paste from map applications, 's' can be any string containing url-style arguments
 'start' and 'slutt'.
 
-`default_fartsgrense`` is used in case the starting point has no defined speed limit, e.g. in bus terminals.
+`default_fartsgrense` is used in case the starting point has no defined speed limit, e.g. in bus terminals.
 
 
 # Output notes
@@ -72,6 +72,18 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
     # Progression at start of first segment, start of second ... end of last.
     # This counts from zero at closest road point to (easting1, northing1)
     progression_at_ends = append!([0.0], cumsum(lengths))
+    # Was there any progression at all?
+    if progression_at_ends == [0.0, 0.0]
+        # Sometimes we get a zero-length distance. For example, 
+        # a ferry crossing. This happens if ea1 == ea2 && no1 == no2
+        # after we ran request modficiations (or even before) 
+        thisdata = Dict(:key => key,
+                        :progression_at_ends => progression_at_ends,
+                        )
+        # Store results on disk and return early.
+        set_memoized_value(key, thisdata)
+        return thisdata
+    end
     # 3d points, nested. Some were received in the opposite direction of our request,
     # then reversed. 
     mls, reversed = extract_multi_linestrings(q)
@@ -123,6 +135,7 @@ function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; de
         :fartsgrense_tuples => fartsgrense_tuples)
     # Store results on disk.
     set_memoized_value(key, thisdata)
+    return thisdata
 end
 function route_leg_data(easting1::T, northing1::T, easting2::T, northing2::T; default_fartsgrense = 50) where T <: Float64
     ea1 = Int(round(easting1))
@@ -204,18 +217,18 @@ function unique_unnested_coordinates_of_multiline_string(mls::Vector{ Vector{Tup
 end
 
 """
-    plot_elevation_and_slope_vs_progression(d::Dict, na1, na2; layout = (1, 1))
+    plot_elevation_and_slope_vs_progression(d::Dict, name1, name2; layout = (1, 1))
     ---> Plots.Plot
 
 # Example
 ```
-julia> plot_elevation_and_slope_vs_progression(d, na1, na2; layout = (2, 1))
+julia> plot_elevation_and_slope_vs_progression(d, name1, name2; layout = (2, 1))
 ```
 """
-function plot_elevation_and_slope_vs_progression(d::Dict, na1, na2; layout = (1, 1))
+function plot_elevation_and_slope_vs_progression(d::Dict, name1, name2; layout = (1, 1))
     p = plot(layout = layout, size = (1200, 800), thickness_scaling = 2, framestyle=:origin, 
         legend = false, gridlinewidth = 2, gridstyle = :dash)
-    plot_elevation_and_slope_vs_progression!(p[1], d, na1, na2)
+    plot_elevation_and_slope_vs_progression!(p[1], d, name1, name2)
 end
 
 

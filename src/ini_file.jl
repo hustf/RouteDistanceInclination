@@ -1,7 +1,6 @@
 # Also see 'exported.jl'.
 
 function _prepare_init_file_configuration(io)
-    printstyled(stderr, "VersionLocal 5", color=:176)
     # Add a comment at top (IniFile.jl has no functions for comments)
     msg = """
         # Configuration file for 'RouteSlopeDistance'.
@@ -14,6 +13,9 @@ function _prepare_init_file_configuration(io)
         #
         # The default base url is the dev environment, which may not always be available.
         # Ref. https://nvdbapiles-v3.atlas.vegvesen.no/dokumentasjon/
+        #
+        # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding
+        # new coorinate replacements or splits. 
         """
     println(io, msg)
     #
@@ -32,13 +34,17 @@ function _prepare_init_file_configuration(io)
     # Hence, refer to the "original / uncorrected" coordinates in keys.
     # The key is from-to coordinates. The value is inserted coordinate.
     # Use https://nvdb-vegdata.github.io/nvdb-visrute/STM/ for finding
-    # new keys. Function `link_split_key(ea1, no1, ea2, no2)` can be useful.
+    # new coorinate replacements or splits. 
+    # Function call `link_split_key(ea1, no1, ea2, no2)` can be useful.
     #
     # You can edit the init file manually. If you revise here instead,
     # then do:
     #
     # julia> RouteSlopeDistance.delete_init_file()
     # Removed C:\Users\frohu_h4g8g6y\RouteSlopeDistance.ini
+    #
+    # You may also want to remove a cached leg, e.g.:
+    # delete_memoized_pair("(31515 6946166)-(31167 6946060)")
     #
     # For testing purpose
     _add_link_split(conta, "(1 1)-(5 5)", "2 2", "Description1", also_reverse = false)
@@ -56,6 +62,8 @@ function _prepare_init_file_configuration(io)
         "Garneskrysset -> Haddal nord: Force turn going out", also_reverse = false)
     _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576",
         "Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.", also_reverse = false)
+    _add_link_split(conta, "(27714 6945607)-(27023 6946081)", "27333 6945601",
+        "Holsekerdalen -> Ulstein rådhus", also_reverse = false)
     _add_link_split(conta, "(33196 6941267)-(34455 6946162)", "34636 6944658",
         "Kvammen <-> Kaldhol", also_reverse = true)
     _add_link_split(conta, "(34455 6946162)-(33729 6946682)", "34048 6946883",
@@ -68,22 +76,40 @@ function _prepare_init_file_configuration(io)
         "Leikong <-> Leikong kyrkje", also_reverse = true)
     _add_link_split(conta, "(22243 6932325)-(22262 6935850)", "23393 6934807",
         "Voldneset <-> Leikong", also_reverse = true)
+    _add_link_split(conta, "(21152 6935687)-(22262 6935850)", "22394 6936132",
+        "Leikongsætra <-> Leikong", also_reverse = true)
+    _add_link_split(conta, "(21895 6935787)-(22262 6935850)", "22394 6936132",
+    "Leikongbakken <-> Leikong", also_reverse = true)
     _add_link_split(conta, "(16245 6947281)-(16074 6947525)", "16182 6947395",
         "Fosnavåg terminal <-> Fosnavåg sparebank", also_reverse = true)
+    _add_link_split(conta, "(16064 6947515)-(16258 6947136)", "16111 6947359",
+        "Fosnavåg terminal <-> Skarabakken", also_reverse = true)
     _add_link_split(conta, "(35335 6926025)-(36586 6926215)", "36610 6926461",
         "Åsen <-> Ørsta Volda lufthamn", also_reverse = true)
     _add_link_split(conta, "(35643 6922428)-(36193 6922438)", "35774 6922214",
         "Volda rutebilstasjon <-> Volda ungdomsskule", also_reverse = true)
+    _add_link_split(conta, "(35249 6922447)-(35643 6922428)", "35653 6922271",
+        " Volda ferjekai <-> Volda rutebilstasjon", also_reverse = true)
     _add_link_split(conta, "(36807 6922760)-(36907 6922492)", "35774 6922214",
         "Volda sjukehus <-> Studentheimane", also_reverse = true)
-    # TODO consider solution
-    # This one would require special endpoint settings. Not very common. Ignore long route around it.
-
-    # Similar solution as for ferries?
-    # E.g. Koparneset ferjekai                         Årvika ferjekai                             (13869 6928277)-(13742 6930773)
-    #
-    # Could we do this with coordinate replacements? Out of Årvika => Koparneset. Out of Raudemyrvegen => Brenslene.
-    # Hm...
+    _add_link_split(conta, "(5826 6914415)-(5863 6915184)", "5851 6915185",
+        "Åheim <-> Torvik", also_reverse = true)
+    _add_link_split(conta, "(5851 6915185)-(5863 6915184)", "5856 6914567",
+        "Åheim <-> Torvik FV61 S12D1 m10700-11004", also_reverse = true)
+    _add_link_split(conta, "(36976 6947659)-(36980 6947583)", "36994 6947462",
+        "Hareid bussterminal -> Hareid ferjekai", also_reverse = false)
+    _add_link_split(conta, "(54938 6956088)-(55100 6953046)", "55032 6956245", 
+        "Moa trafikkterminal -> Urdalen", also_reverse = false)
+    _add_link_split(conta, "(55100 6953046)-(54938 6956088)", "54978 6956381", 
+        "Urdalen -> Moa trafikkterminal", also_reverse = false)
+    _add_link_split(conta, "(53067 6956011)-(53608 6956115)", "52971 6956214", 
+        "Ålesund sjukehus <-> Åse", also_reverse = true)
+    _add_link_split(conta, "(23412 6939348)-(24064 6939043)", "23914 6938877",
+        "Myrvåg <-> Møre barne- og ungdomsskule", also_reverse = true)
+    _add_link_split(conta, "(23412 6939348)-(23911 6938921)", "23914 6938877",
+        "Myrvåg <-> Myrvåglomma", also_reverse = true)
+    _add_link_split(conta, "(26714 6946197)-(27714 6945607)", "27325 6945576",
+        "Kongsberg Maritime Ulsteinvik -> Holsekerdalen", also_reverse = false)
     #
     #########################
     # Coordinate replacements
@@ -92,7 +118,7 @@ function _prepare_init_file_configuration(io)
     # splits of requests.
 
     _add_coord_replacement(conta, (27262, 6945774) => (27265, 6945717), "Ulsteinvik skysstasjon", alternative_out = (27224, 6945781))
-    _add_coord_replacement(conta, (36976, 6947659) => (36943, 6947662), "Hareid bussterminal", alternative_out = (36947, 6947667))
+    _add_coord_replacement(conta, (36976, 6947659) => (36943, 6947662), "Hareid bussterminal", alternative_out = (36975, 6947631))
     _add_coord_replacement(conta, (26449, 6940130) => (26453, 6940120),  "Garneskrysset")
     _add_coord_replacement(conta, (16064, 6947515) => (16048, 6947536),  "Fosnavåg terminal", alternative_out = (16075, 6947499))
     _add_coord_replacement(conta, (25885, 6945943) => (25933, 6945968),  "Ulstein verft")
@@ -106,11 +132,14 @@ function _prepare_init_file_configuration(io)
     _add_coord_replacement(conta, (36586, 6926215) => (36652, 6926215),  "Ørsta Volda lufthamn", alternative_out = (36564, 6926161))
     _add_coord_replacement(conta, (54938, 6956088) => (54967, 6956088),  "Moa trafikkterminal", alternative_out = (54923, 6956123))
     _add_coord_replacement(conta, (11193, 6931632) => (11198, 6931667),  "Grønnevik")
-    # This is a trick - there is no public road between Raudemyrvegen and Brenslene
+    _add_coord_replacement(conta, (36980, 6947583) => (37005, 6947595), "Hareid ferjekai")
+    _add_coord_replacement(conta, (44874, 6957827) => (44990, 6957865), "Ålesund rutebilstasjon")
+    # This is a trick - there is no public road between Raudemyrvegen and Brenslene. 
+    # We can move the outgoing, because the bus line only travels in one direction.
     _add_coord_replacement(conta, (37168, 6923045) => (37168, 6923045),  "Raudemyrvegen", alternative_out = (37122, 6923051))
-    # This is a trick - there is no road across fjords
-    _add_coord_replacement(conta, (13869, 6928277) => (13869, 6928277),  "Koparneset ferjekai", alternative_out = (13742, 6930773))
-
+    # This is a trick - there is no road across fjords. But it's not sufficent. Out of ferjekai to somewhere on land is also affected.
+    #_add_coord_replacement(conta, (13869, 6928277) => (13869, 6928277),  "Koparneset ferjekai", alternative_out = (13742, 6930773))
+    #_add_coord_replacement(conta, (13742, 6930773) => (13742, 6930773),  "Årvika ferjekai", alternative_out = (13869, 6928277))
     #=throw("Ouch")
 
  #    Ulsteinvik skysstasjon
