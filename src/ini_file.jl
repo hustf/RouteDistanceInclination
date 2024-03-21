@@ -62,6 +62,10 @@ function _prepare_init_file_configuration(io)
         "Garneskrysset -> Haddal nord: Force turn going out", also_reverse = false)
     _add_link_split(conta, "(27262 6945774)-(27714 6945607)", "27325 6945576",
         "Ulsteinvik skysstasjon -> Holsekerdalen: Force right side roundabout.", also_reverse = false)
+    _add_link_split(conta, "(27714 6945607)-(27262 6945774)", "27426 6945653",
+        "Ulsteinvik skysstasjon <- Holsekerdalen: Force right side roundabout.", also_reverse = false)
+    _add_link_split(conta, "(28961 6945248)-(27262 6945774)", "27426 6945653",
+        "Ulstein vgs -> Ulsteinvik skysstasjon: Force right side roundabout.", also_reverse = false)
     _add_link_split(conta, "(27714 6945607)-(27023 6946081)", "27333 6945601",
         "Holsekerdalen -> Ulstein rådhus", also_reverse = false)
     _add_link_split(conta, "(33196 6941267)-(34455 6946162)", "34636 6944658",
@@ -74,6 +78,8 @@ function _prepare_init_file_configuration(io)
         "Hareid ungdomsskule  -> Holstad", also_reverse = false)
     _add_link_split(conta, "(22262 6935850)-(22266 6936088)", "22394 6936132",
         "Leikong <-> Leikong kyrkje", also_reverse = true)
+    _add_link_split(conta, "(21152 6935687)-(22262 6935850)", "22394 6936132",
+        "Leikong <-> Leikongsætra", also_reverse = true)
     _add_link_split(conta, "(22243 6932325)-(22262 6935850)", "23393 6934807",
         "Voldneset <-> Leikong", also_reverse = true)
     _add_link_split(conta, "(21152 6935687)-(22262 6935850)", "22394 6936132",
@@ -110,6 +116,16 @@ function _prepare_init_file_configuration(io)
         "Myrvåg <-> Myrvåglomma", also_reverse = true)
     _add_link_split(conta, "(26714 6946197)-(27714 6945607)", "27325 6945576",
         "Kongsberg Maritime Ulsteinvik -> Holsekerdalen", also_reverse = false)
+    _add_link_split(conta, "(36272 6958672)-(46842 6959869)", "40759 6962842",
+        "Skjong nordre <-> Juv snuplass")
+    _add_link_split(conta, "(38574 6917520)-(36589 6919296)", "36801 6919474",
+        "Løvikneset <-> Grevsnes")
+    _add_link_split(conta, "(36589 6919296)-(39116 6917180)", "36801 6919474",
+        "Grevsnes <-> Humberset")
+    _add_link_split(conta, "(33142 6946489)-(35590 6942991)", "34063 6946848",
+        "Byggeli <-> Ulset")
+    _add_link_split(conta, "(23294 6937470)-(23911 6938921)", "4124 6938709",
+        "Djupvika <-> Myrvåglomma")
     #
     #########################
     # Coordinate replacements
@@ -134,6 +150,34 @@ function _prepare_init_file_configuration(io)
     _add_coord_replacement(conta, (11193, 6931632) => (11198, 6931667),  "Grønnevik")
     _add_coord_replacement(conta, (36980, 6947583) => (37005, 6947595), "Hareid ferjekai")
     _add_coord_replacement(conta, (44874, 6957827) => (44990, 6957865), "Ålesund rutebilstasjon")
+    _add_coord_replacement(conta, (50459, 6952400) => (50432, 6952397), "Simabakken")
+    _add_coord_replacement(conta, (46273, 6954707) => (46252, 6954684), "Lerheimskaia")
+    _add_coord_replacement(conta, (61552, 6968858) => (61534, 6968855), "Instevågen")
+    _add_coord_replacement(conta, (69101, 6961820) => (69073, 6961823), "Vadset")
+    _add_coord_replacement(conta, (83370, 6934535) => (83353, 6934536), "Stranda kai")
+    _add_coord_replacement(conta, (65186, 6944721) => (65175, 6944723), "Vik nord")
+    _add_coord_replacement(conta, (64658, 6942218) => (64651, 6942200), "Riksheim")
+    _add_coord_replacement(conta, (28752, 6925847) => (28773, 6925837), "Ulvestad")
+    _add_coord_replacement(conta, (49759, 6957942) => (49653, 6957970), "Torvteigen")
+    _add_coord_replacement(conta, (56842, 6957522) => (56812, 6957450), "Bingsa")
+    _add_coord_replacement(conta, (39947, 6961699) => (39948, 6961715), "Giske kyrkje")
+    _add_coord_replacement(conta, (78987, 6954575) => (78979, 6954579), "Sjøholt")
+
+    _add_coord_replacement(conta, (16347, 6954896) => (16344, 6954890),  "Goksøyr snuplass", alternative_out = (16344, 6954890))
+    _add_coord_replacement(conta, (16658, 6954386) => (16654, 6954386),  "Goksøyr ytre")
+    _add_coord_replacement(conta, (39234, 6959744) => (39222, 6959754),  "Støbakk")
+    _add_coord_replacement(conta, (2771,  6933098) => (	2742, 6933101), "Kvamsøya ferjekai")
+    _add_coord_replacement(conta, (55770, 6955163) => (55656, 6955157), "Spjelkavik barneskole")
+    _add_coord_replacement(conta, (55801, 6955414) => (55810, 6955425), "Spjelkavik ungdomsskole")
+    _add_coord_replacement(conta, (31989, 6908085) => (31981, 6908162), "Sandvika")
+    _add_coord_replacement(conta, (52071, 6908130) => (52086, 6908129), "Kalvatn E39")
+    _add_coord_replacement(conta, (43757, 6925518) => (43759, 6925541), "Follestaddalen")
+
+    # This is a trick - we don't want to merge stops 'Høgskulen i Volda' and 'Vikebygdvegen',
+    # but we don't want to lower the threshold too much for this reason, either. 
+    # So we move the school stop.
+    _add_coord_replacement(conta, (36505, 6922556) => (36530, 6922638), "Høgskulen i Volda")
+
     # This is a trick - there is no public road between Raudemyrvegen and Brenslene. 
     # We can move the outgoing, because the bus line only travels in one direction.
     _add_coord_replacement(conta, (37168, 6923045) => (37168, 6923045),  "Raudemyrvegen", alternative_out = (37122, 6923051))
@@ -184,7 +228,7 @@ function _prepare_init_file_configuration(io)
     # Moa trafikkterminal
     set(conta, "coordinates replacement", "Out of 54938 6956088",  "54923 6956123")
     set(conta, "coordinates replacement", "In to 54938 6956088",  "54967 6956088")
-    # Giske kyrkje 39948 6961715      (39600 6962181)-(39947 6961699)
+
     #set()
 
     #=
